@@ -1,0 +1,68 @@
+version: '2'
+name: pontoon
+services:
+
+  frontend:
+    image: ghcr.io/pontoon-data/pontoon-frontend:${IMAGE_VERSION}
+    env_file:
+      - ./fargate.env
+    logging:
+      driver: awslogs
+      options:
+        awslogs-group: /ecs/pontoon-fargate
+        awslogs-region: ca-central-1
+        awslogs-stream-prefix: pontoon-frontend
+
+  api:
+    image: ghcr.io/pontoon-data/pontoon-api:${IMAGE_VERSION}
+    env_file:
+      - ./fargate.env
+    logging:
+      driver: awslogs
+      options:
+        awslogs-group: /ecs/pontoon-fargate
+        awslogs-region: ca-central-1
+        awslogs-stream-prefix: pontoon-api
+
+  redis:
+    logging:
+      driver: awslogs
+      options:
+        awslogs-group: /ecs/pontoon-fargate
+        awslogs-region: ca-central-1
+        awslogs-stream-prefix: pontoon-redis
+
+  postgres:
+    image: postgres:17.5-alpine
+    env_file:
+      - ./fargate.env
+    logging:
+      driver: awslogs
+      options:
+        awslogs-group: /ecs/pontoon-fargate
+        awslogs-region: ca-central-1
+        awslogs-stream-prefix: pontoon-postgres
+  
+  worker:
+    image: ghcr.io/pontoon-data/pontoon-worker:${IMAGE_VERSION}
+    env_file:
+      - ./fargate.env
+    logging:
+      driver: awslogs
+      options:
+        awslogs-group: /ecs/pontoon-fargate
+        awslogs-region: ca-central-1
+        awslogs-stream-prefix: pontoon-worker
+
+  beat:
+    image: ghcr.io/pontoon-data/pontoon-beat:${IMAGE_VERSION}
+    env_file:
+      - ./fargate.env
+    logging:
+      driver: awslogs
+      options:
+        awslogs-group: /ecs/pontoon-fargate
+        awslogs-region: ca-central-1
+        awslogs-stream-prefix: pontoon-beat
+
+

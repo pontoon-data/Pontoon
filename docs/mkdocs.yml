@@ -1,0 +1,102 @@
+site_name: Pontoon
+site_description: The open source data export platform that helps data teams send data to their customers
+site_author: Pontoon Team
+site_url: https://getpontoon.com/
+
+repo_name: pontoon/pontoon
+repo_url: https://github.com/pontoon/pontoon
+edit_uri: edit/main/docs/docs/
+
+theme:
+  name: material
+  logo: assets/pontoon-logo-dark.png
+  favicon: assets/favicon.ico
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: blue
+      accent: blue
+      toggle:
+        icon: material/weather-night
+        name: Switch to dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: blue
+      accent: blue
+      toggle:
+        icon: material/weather-sunny
+        name: Switch to light mode
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - navigation.expand
+    - navigation.top
+    - search.suggest
+    - search.highlight
+    - content.code.copy
+    - content.code.annotate
+  icon:
+    repo: fontawesome/brands/github
+    edit: material/pencil
+    view: material/eye
+
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/pontoon/pontoon
+    - icon: fontawesome/brands/twitter
+      link: https://twitter.com/getpontoon
+  analytics:
+    provider: google
+    property: !ENV GOOGLE_ANALYTICS_KEY
+
+plugins:
+  - search
+
+markdown_extensions:
+  - admonition
+  - codehilite
+  - pymdownx.details
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets:
+      check_paths: true
+  - pymdownx.smartsymbols
+  - pymdownx.superfences
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.tasklist:
+      custom_checkbox: true
+  - pymdownx.tilde
+  - toc:
+      permalink: true
+
+nav:
+  - Home: index.md
+  - Getting Started:
+      - Deployment:
+          - Quick Start (Docker): getting-started/quick-start.md
+          - Docker Compose Deployment: getting-started/docker-compose.md
+          - AWS Fargate Deployment: getting-started/aws-fargate.md
+      - Sharing Data:
+          - Transfer Quick Start: getting-started/transfer-quick-start.md
+      - Other:
+          - Architecture: getting-started/architecture.md
+  - Sources & Destinations:
+      - Overview: sources-destinations/overview.md
+      - Sources:
+          - Snowflake: sources-destinations/sources/snowflake.md
+          - Amazon Redshift: sources-destinations/sources/redshift.md
+          - Google BigQuery: sources-destinations/sources/bigquery.md
+          - Postgres: sources-destinations/sources/postgresql.md
+      - Destinations:
+          - Snowflake: sources-destinations/destinations/snowflake.md
+          - Amazon Redshift: sources-destinations/destinations/redshift.md
+          - Google BigQuery: sources-destinations/destinations/bigquery.md
+          - Postgres: sources-destinations/destinations/postgresql.md

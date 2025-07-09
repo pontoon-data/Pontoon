@@ -1,0 +1,39 @@
+[build-system]
+requires = ["setuptools>=42", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "pontoon"
+version = "1.0.3-alpha"
+description = "Pontoon data transfer library."
+authors = [{ name = "Pontoon, Inc.", email = "hello@getpontoon.com" }]
+license = { text = "Copyright 2025 Pontoon, Inc. All Rights Reserved." }
+readme = "README.md"
+dependencies = [
+    "pyarrow==18.1.0",
+    "SQLAlchemy==1.4.54",
+    "boto3==1.35.92",
+    "psycopg2==2.9.10",
+    "sqlalchemy-redshift==0.8.14",
+    "sqlalchemy-bigquery==1.12.0",
+    "snowflake-sqlalchemy==1.7.2",
+    "pyathena==3.12.2",
+    "google-cloud-storage==2.19.0",
+    "google-cloud-bigquery-storage==2.27.0",
+    "celery==5.5.3",
+    "celery-redbeat==2.3.2",
+]
+
+[project.optional-dependencies]
+dev = [
+    "build==1.2.2",
+    "pytest==8.3.4",
+    "setuptools==75.7.0",
+    "python-dotenv==1.0.1",
+    "psutil==6.1.1",
+]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["pontoon*"]
+exclude = ["tests*"]

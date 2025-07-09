@@ -1,0 +1,42 @@
+# This docker compose is for spinning up two postgres databases for local testing
+# The two databases are on port 5433 and 5434
+# Note: To connect to them from Pontoon running locally, use host.docker.internal for the hostname
+#
+# To run this docker compose, use the following command:
+# docker compose -p pg_test_env -f docker-compose.test-pg.yml up
+
+services:
+  source-postgres:
+    image: postgres:17.5-alpine
+    environment:
+      POSTGRES_USER: source
+      POSTGRES_PASSWORD: test
+      POSTGRES_DB: sourcedb
+    volumes:
+      - source-pgdata:/var/lib/postgresql/data
+    ports:
+      - "5433:5432"
+    networks:
+      - source_net
+  destination-postgres:
+    image: postgres:17.5-alpine
+    environment:
+      POSTGRES_USER: dest
+      POSTGRES_PASSWORD: test
+      POSTGRES_DB: destdb
+    volumes:
+      - destination-pgdata:/var/lib/postgresql/data
+    ports:
+      - "5434:5432"
+    networks:
+      - destination_net
+
+volumes:
+  source-pgdata:
+  destination-pgdata:
+
+networks:
+  source_net:
+    driver: bridge
+  destination_net:
+    driver: bridge

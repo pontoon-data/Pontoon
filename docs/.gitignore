@@ -1,0 +1,24 @@
+# Ignore build output
+/site/
+
+# Python virtual environment
+venv/
+.env/
+.venv/
+
+# Byte-compiled / cache files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# MkDocs cache
+.mypy_cache/
+.mkdocs/
+
+# OS/system files
+.DS_Store
+Thumbs.db
+
+# Editor/IDE configs
+.vscode/
+.idea/

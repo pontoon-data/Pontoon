@@ -1,0 +1,21 @@
+[build-system]
+requires = ["setuptools>=42", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "app"
+version = "0.1.0"
+description = "Pontoon API"
+authors = [{ name = "Pontoon, Inc.", email = "hello@getpontoon.com" }]
+license = { text = "Copyright 2025 Pontoon, Inc. All Rights Reserved." }
+dependencies = [
+    "fastapi[standard]==0.115.6",
+    "sqlmodel==0.0.22",
+    "pydantic-settings==2.7.1",
+    "PyJWT==2.10.1",
+    "SQLAlchemy==2.0.41",
+]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["app*"]

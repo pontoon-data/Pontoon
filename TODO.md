@@ -1,0 +1,35 @@
+- Get queue working with celery
+  - ~~Pontoon orchestration can put things on the queue in a deployment agnostic way~~
+    - ~~Make an interface for orchestation. One for putting on queue, one for reading~~
+  - ~~Build a simple worker to read off the queue and run the job~~
+  - Add redbeat scheduling for scheduled transfers
+  - Get a transfer working from source to destination (postgres to different postgres)
+- ~~Get a supervisor config working for doing a single container build~~
+- ~~Get a dev & production build working~~
+- Use env variables better for setting up config
+  - ~~API envs~~
+  - ~~Using an external postgres db~~
+  - ~~Using an external redis db~~
+  - ~~Removing remaining AWS variables for step functions etc~~
+  - ~~Remove auth0 variables from api~~
+  - Clean up examples in data-transfer to remove any cloud details
+- ~~Improve web ui~~
+  - ~~Add postgres as a source / destination~~
+  - ~~Fix model table loading feedback~~
+  - ~~Fix checkboxes for destinations~~
+  - ~~Better onboarding / flows for creating first resources~~
+  - ~~Remove edit button from details screen~~
+  - ~~Update last sync on destination page~~
+- Docs
+  - ~~Docs website~~
+  - Update source and destination connector docs with tested steps (eg. permissions)
+  - Update docs with docker container url (eg. ghcr.io/....)
+  - Write fargate deployment docs
+  - Add screenshots to Transfer quick start
+  - Github readme
+- Basic docs for permissions for databases (both source and destination)
+- End to end testing
+  - Benchmarks for testing (eg. 100 million records in 3 minutes)
+- Enterprise License
+- Update getpontoon.com with removing demo and add docker run command
+- Basic single user auth

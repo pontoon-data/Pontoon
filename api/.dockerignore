@@ -1,0 +1,12 @@
+__pycache__/
+.idea/
+
+database.db
+alex-credentials.txt
+vendor
+sample.dev.env
+
+dev/
+dist
+*.egg-info
+db/migrations.yml

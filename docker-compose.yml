@@ -1,0 +1,102 @@
+version: '2'
+name: pontoon
+
+services:
+  frontend:
+    image: pontoon-frontend:${IMAGE_VERSION}
+    build:
+      context: ./web-app/package
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    networks:
+      - app-network
+    environment:
+      NEXT_TELEMETRY_DISABLED: 1
+      PONTOON_API_ENDPOINT: ${API_ENDPOINT}
+    depends_on:
+      - api
+
+  api:
+    image: pontoon-api:${IMAGE_VERSION}
+    build:
+      context: .
+      dockerfile: api/Dockerfile
+    ports:
+      - "8000:8000"
+    networks:
+      - app-network
+    environment:
+      POSTGRES_HOST: ${POSTGRES_HOST}
+      POSTGRES_PORT: ${POSTGRES_PORT}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DATABASE: ${POSTGRES_DATABASE}
+      ALLOW_ORIGIN: ${FRONT_END_URL}
+      CELERY_BROKER_URL: ${CELERY_BROKER_URL}
+      CELERY_RESULT_BACKEND: ${CELERY_RESULT_BACKEND}
+      PONTOON_API_ENDPOINT: ${API_ENDPOINT}
+    depends_on:
+      - postgres
+      - redis
+
+  redis:
+    image: redis:7-alpine
+    volumes:
+      - redis-data:/data
+    ports:
+      - "6379:6379"
+    networks:
+      - app-network
+    command: ["redis-server", "--appendonly", "yes", "--appendfsync", "always"]
+
+  postgres:
+    image: postgres:17.5-alpine
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DATABASE}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./api/db/migrations/V0001__initial_pontoon_schema.sql:/docker-entrypoint-initdb.d/V0001__initial_pontoon_schema.sql
+    ports:
+      - "5432:5432"
+    networks:
+      - app-network
+  
+  worker:
+    image: pontoon-worker:${IMAGE_VERSION}
+    build:
+      context: data-transfer/pontoon
+      dockerfile: Dockerfile
+    command: celery -A pontoon.celery.celery_app worker --loglevel=info
+    environment:
+      CELERY_BROKER_URL: ${CELERY_BROKER_URL}
+      CELERY_RESULT_BACKEND: ${CELERY_RESULT_BACKEND}
+      PONTOON_API_ENDPOINT: ${API_ENDPOINT}
+    networks:
+      - app-network
+    depends_on:
+      - redis
+
+  beat:
+    image: pontoon-beat:${IMAGE_VERSION}
+    build:
+      context: data-transfer/pontoon
+      dockerfile: Dockerfile
+    command: celery -A pontoon.celery.celery_app beat --scheduler redbeat.RedBeatScheduler --loglevel=info
+    environment:
+      CELERY_BROKER_URL: ${CELERY_BROKER_URL}
+      CELERY_RESULT_BACKEND: ${CELERY_RESULT_BACKEND}
+    networks:
+      - app-network
+    depends_on:
+      - redis
+
+volumes:
+  postgres-data:
+  redis-data:
+
+networks:
+  app-network:
+    driver: bridge

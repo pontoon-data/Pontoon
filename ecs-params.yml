@@ -1,0 +1,47 @@
+version: 1
+task_definition:
+  ecs_network_mode: awsvpc
+  task_execution_role: ecsTaskExecutionRole
+  task_size:
+    cpu_limit: 512
+    mem_limit: 2GB
+  services:
+    frontend:
+      depends_on:
+        - container_name: api
+          condition: START
+    api:
+      depends_on:
+        - container_name: postgres
+          condition: HEALTHY
+        - container_name: redis
+          condition: HEALTHY
+    beat:
+      depends_on:
+          - container_name: redis
+            condition: HEALTHY
+    worker:
+      depends_on:
+          - container_name: redis
+            condition: HEALTHY  
+    redis:
+      healthcheck:
+        test: ["CMD-SHELL", "redis-cli -h 127.0.0.1 ping | grep PONG || exit 1"]
+        interval: 10s
+        timeout: 10s
+        retries: 3
+    postgres:
+      healthcheck:
+        test: ["CMD-SHELL", "pg_isready -h localhost -U postgres"]
+        interval: 10s
+        timeout: 10s
+        retries: 3
+run_params:
+  network_configuration:
+    awsvpc_configuration:
+      subnets:
+        - subnet-0441b3260e16368bd
+        - subnet-04b7f89ee386776b6
+      assign_public_ip: ENABLED
+
+  

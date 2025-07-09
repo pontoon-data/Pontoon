@@ -1,0 +1,5 @@
+postgres-data
+redis-data
+**/Makefile
+**/Dockerfile
+**/README.md
