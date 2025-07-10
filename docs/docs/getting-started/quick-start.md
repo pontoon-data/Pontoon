@@ -15,9 +15,10 @@ docker run \
     --name pontoon \
     -p 3000:3000 \
     --rm \
+    --pull=always \
     -v pontoon-internal-postgres:/var/lib/postgresql/data \
-    -v redis-data:/data pontoon:0.0.1
-    # TODO : DOCKER REGISTRY URL
+    -v pontoon-internal-redis:/data \
+    ghcr.io/pontoon-data/pontoon:latest
 ```
 
 ## Step 3: You're Ready! 🚀

@@ -9,8 +9,7 @@ Deploy Pontoon using Docker Compose for production environments with full contro
 ## Step 1: Clone the Repository
 
 ```bash
-# TODO : UPDATE WITH NEW URL
-git clone https://github.com/pontoon/pontoon.git
+git clone https://github.com/pontoon-data/Pontoon.git
 ```
 
 ## Step 2: Environment Configuration (Optional)
