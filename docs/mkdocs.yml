@@ -3,8 +3,8 @@ site_description: The open source data export platform that helps data teams sen
 site_author: Pontoon Team
 site_url: https://getpontoon.com/
 
-repo_name: pontoon/pontoon
-repo_url: https://github.com/pontoon/pontoon
+repo_name: pontoon-data/Pontoon
+repo_url: https://github.com/pontoon-data/Pontoon
 edit_uri: edit/main/docs/docs/
 
 theme:
@@ -43,9 +43,7 @@ theme:
 extra:
   social:
     - icon: fontawesome/brands/github
-      link: https://github.com/pontoon/pontoon
-    - icon: fontawesome/brands/twitter
-      link: https://twitter.com/getpontoon
+      link: https://github.com/pontoon-data/Pontoon
   analytics:
     provider: google
     property: !ENV GOOGLE_ANALYTICS_KEY
