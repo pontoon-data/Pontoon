@@ -8,20 +8,20 @@ Deploy Pontoon on AWS Fargate for scalable, managed container orchestration with
 - An AWS Account
 - AWS credentials or IAM Role with permission to create VPCs, Subnets, Security Groups, ECS clusters, ECS Task Definitions and run ECS Tasks
 - The AWS default `ecsTaskExecution` IAM role created in your account
-- An AWS CloudWatch Log Group named `/ecs/pontoon-fargate` 
+- An AWS CloudWatch Log Group (we use one named `/ecs/pontoon-fargate` by default) 
 - Optional, but highly recommended: your own Redis 7+ and PostgreSQL 16+ instances
 
 > 💡 This guide is intended to provide a very simple example of deloyment on AWS ECS Fargate. We strongly recommend that you adapt this guide to your environment and follow security and availability best practices as needed.
 
 
-### External Redis and PostgreSQL
+### Redis and PostgreSQL
 
 We highly recommend using your own external Redis and PostgreSQL instances for security, reliability, durability and performance. 
 
 To configure your own external data stores:
 
-- Update the `POSTGRES_*` and `CELERY_*` variables in `fargate.env` and ensure those endpoints are accessible from Subnets used by your ECS Task
-- Remove the `redis` and `postgres` services from `docker-compose.yml` and `docker-compose.fargate.yml`
+- Update the `FARGATE_POSTGRES_*` and `FARGATE_CELERY_*` variables in `.env` and ensure those endpoints are accessible from Subnets used by your ECS Task
+- Remove the `redis` and `postgres` services from `docker-compose.fargate.yml`
 
 ### Step 1: Create an ECS cluster
 
@@ -63,8 +63,8 @@ run_params:
 
 Start Pontoon using ECS CLI and the Docker Compose definitions:
 ```bash
-$ ecs-cli compose -f docker-compose.yml -f docker-compose.fargate.yml up --launch-type FARGATE
-INFO[0000] Using ECS task definition                     TaskDefinition="pontoon:1"
+$ ecs-cli compose -f docker-compose.fargate.yml up --launch-type FARGATE
+INFO[0000] Using ECS task definition                     TaskDefinition="Pontoon:1"
 INFO[0000] Auto-enabling ECS Managed Tags               
 INFO[0001] Starting container...                         container=pontoon-fargate/4bbead2ac77a47c0b573d2481045d15d/api
 INFO[0001] Starting container...                         container=pontoon-fargate/4bbead2ac77a47c0b573d2481045d15d/beat
@@ -72,20 +72,20 @@ INFO[0001] Starting container...                         container=pontoon-farga
 INFO[0001] Starting container...                         container=pontoon-fargate/4bbead2ac77a47c0b573d2481045d15d/postgres
 INFO[0001] Starting container...                         container=pontoon-fargate/4bbead2ac77a47c0b573d2481045d15d/redis
 INFO[0001] Starting container...                         container=pontoon-fargate/4bbead2ac77a47c0b573d2481045d15d/worker
-INFO[0001] Describe ECS container status                 container=pontoon-fargate/4bbead2ac77a47c0b573d2481045d15d/redis desiredStatus=RUNNING lastStatus=PROVISIONING taskDefinition="pontoon:1"
+INFO[0001] Describe ECS container status                 container=pontoon-fargate/4bbead2ac77a47c0b573d2481045d15d/redis desiredStatus=RUNNING lastStatus=PROVISIONING taskDefinition="Pontoon:1"
 ```
 
 Check that your task containers are up and running:
 
 ```bash
-$ ecs-cli compose ps
+$ ecs-cli compose -f docker-compose.fargate.yml ps
 Name    State    Ports    TaskDefinition  Health
-pontoon-fargate/4bbead2ac77a47c0b573d2481045d15d/redis     RUNNING  15.223.209.32:6379->6379/tcp  pontoon:1       HEALTHY
-pontoon-fargate/4bbead2ac77a47c0b573d2481045d15d/frontend  RUNNING  15.223.209.32:3000->3000/tcp  pontoon:1       UNKNOWN
-pontoon-fargate/4bbead2ac77a47c0b573d2481045d15d/api       RUNNING  15.223.209.32:8000->8000/tcp  pontoon:1      UNKNOWN
-pontoon-fargate/4bbead2ac77a47c0b573d2481045d15d/worker    RUNNING                                pontoon:1       UNKNOWN
-pontoon-fargate/4bbead2ac77a47c0b573d2481045d15d/postgres  RUNNING  15.223.209.32:5432->5432/tcp  pontoon:1       HEALTHY
-pontoon-fargate/4bbead2ac77a47c0b573d2481045d15d/beat      RUNNING                                pontoon:1       UNKNOWN
+pontoon-fargate/4bbead2ac77a47c0b573d2481045d15d/redis     RUNNING  15.223.209.32:6379->6379/tcp  Pontoon:1       HEALTHY
+pontoon-fargate/4bbead2ac77a47c0b573d2481045d15d/frontend  RUNNING  15.223.209.32:3000->3000/tcp  Pontoon:1       UNKNOWN
+pontoon-fargate/4bbead2ac77a47c0b573d2481045d15d/api       RUNNING  15.223.209.32:8000->8000/tcp  Pontoon:1      UNKNOWN
+pontoon-fargate/4bbead2ac77a47c0b573d2481045d15d/worker    RUNNING                                Pontoon:1       UNKNOWN
+pontoon-fargate/4bbead2ac77a47c0b573d2481045d15d/postgres  RUNNING  15.223.209.32:5432->5432/tcp  Pontoon:1       HEALTHY
+pontoon-fargate/4bbead2ac77a47c0b573d2481045d15d/beat      RUNNING                                Pontoon:1       UNKNOWN
 ```
 
 ### Step 4: Run Database Migrations
@@ -100,7 +100,7 @@ $ psql -h 15.224.219.33 -U dev -d pontoon -f api/db/migrations/V0001__initial_po
 
 > 💡 You may need to modify the Security Group for your ECS Task to allow external access to port 3000 
 
-Navigate to the public IP or DNS name for your ECS task using port `:3000`:
+Navigate to the public IP or DNS name for your ECS task using port `:3000`, e.g.:
 
 [http://15.224.219.33:3000/](http://15.224.219.33:3000/)
 
