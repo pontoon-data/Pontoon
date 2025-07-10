@@ -1,10 +1,45 @@
-# Pontoon Data Transfer
+<div align="center" style="margin-bottom: 2em; display: flex; align-items: center; justify-content: center; gap: 2em;">
+    <img src="assets/logo-graphic-1-gradient.png" alt="Pontoon Logo" width="100" height="100" style="vertical-align: middle;" />
+    <span style="font-size: 80px; font-weight: bold; font-family: 'Segoe UI', 'Arial', sans-serif; vertical-align: middle; letter-spacing: 0.05em;">Pontoon</span>
+</div>
 
-## Setup:
+<h3 align="center">Build production ready data syncs that<br/>integrate with your customer's data warehouse.</h3>
 
-### Rename the env files
+<div align="center">
+    <div>
+        <a href="https://pontoon-data.github.io/Pontoon/"><strong>Docs</strong></a> ·
+        <a href="https://pontoon-data.github.io/Pontoon/getting-started/quick-start/"><strong>Quick Start</strong></a> ·
+        <a href="https://github.com/pontoon-data/Pontoon/issues"><strong>Report Bug</strong></a> ·
+        <a href="https://getpontoon.com/contact"><strong>Contact</strong></a> ·
+    </div>
+    <br/>
+    <p align="center">
+        <a href="mailto:hello@getpontoon.com"><img src="https://img.shields.io/badge/Email%20Us-blue" /></a>
+        <a href="https://github.com/pontoon-data/Pontoon/blob/master/LICENSE" target="_blank">
+            <img src="https://img.shields.io/static/v1?label=license&message=MIT&color=blue" alt="License">
+        </a>
+        <a href="https://github.com/pontoon-data/Pontoon/blob/master/LICENSE" target="_blank">
+            <img src="https://img.shields.io/static/v1?label=license&message=ELv2&color=blue" alt="License">
+        </a>
+    </p>
+</div>
 
-Rename `api/app/sample.dev.env` to `api/app/dev.env`. Rename `web-app/package/sample.env.local` to `web-app/package/.env.development`.
+# About
+
+Pontoon is an open source, self-hosted data export platform. Build data export features for your product without the hassle of moving data across cloud providers.
+
+<div align="center" style="margin: 2em 0;">
+  <img src="assets/pontoon-destinations.png" alt="Pontoon Destinations" width="980" style="border-radius: 12px; box-shadow: 0 2px 12px rgba(0,0,0,0.08);" />
+</div>
+
+## Key Features
+
+- **🚀 Easy Deployment**: [Get started](https://pontoon-data.github.io/Pontoon/getting-started/quick-start/) in minutes with Docker or deploy to AWS Fargate
+- **🎯 Major Data Warehouses Integrations**: Supports Snowflake, BigQuery, Redshift, and Postgres as sources and destinations
+- **☁️ Multi-cloud**: Send data from any cloud to any cloud. Amazon Redshift ➡️ Google BigQuery? No problem!
+- **⚡ Automated Syncs**: Schedule data transfers with automatic backfills and incremental loads
+- **✨ Web Interface**: User-friendly dashboard for managing syncs, built with React/Nextjs
+- **🔌 REST API**: Programmatic access to all Pontoon features, built with FastAPI
 
 ## Running Pontoon with Docker Compose
 
@@ -13,18 +48,3 @@ docker compose up --build
 ```
 
 To view the Web UI: `localhost:3000`. To view the OpenAPI docs / test the API: `localhost:8000/docs`
-
-## Running Pontoon with Docker Image (unified)
-
-Pontoon is packaged as a single docker image for ease of getting started. In production, we recommend deploying using docker compose.
-
-```sh
-# Builds base images
-docker compose build
-
-# Builds unified image
-docker build -t pontoon:0.0.1 .
-
-# Runs unified image
-docker run -it --name pontoon --rm -p 3000:3000 -v pontoon-internal-postgres:/var/lib/postgresql/data -v redis-data:/data pontoon:0.0.1
-```
