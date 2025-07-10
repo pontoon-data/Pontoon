@@ -1,6 +1,10 @@
-<div align="center" style="margin-bottom: 2em; display: flex; align-items: center; justify-content: center; gap: 2em;">
-    <img src="assets/logo-graphic-1-gradient.png" alt="Pontoon Logo" width="100" height="100" style="vertical-align: middle;" />
-    <span style="font-size: 80px; font-weight: bold; font-family: 'Segoe UI', 'Arial', sans-serif; vertical-align: middle; letter-spacing: 0.05em;">Pontoon</span>
+<div align="center">
+    <img src="assets/logo-graphic-1-gradient.png" alt="Pontoon Logo" width="100" height="100"/>
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+    <picture>
+        <source media="(prefers-color-scheme: dark)" srcset="assets/logo-type-white.png">
+        <img height="90" src="assets/logo-type-grey.png">
+    </picture>
 </div>
 
 <h3 align="center">Build production ready data syncs that<br/>integrate with your customer's data warehouse.</h3>
@@ -29,7 +33,7 @@
 Pontoon is an open source, self-hosted data export platform. Build data export features for your product without the hassle of moving data across cloud providers.
 
 <div align="center" style="margin: 2em 0;">
-  <img src="assets/pontoon-destinations.png" alt="Pontoon Destinations" width="980" style="border-radius: 12px; box-shadow: 0 2px 12px rgba(0,0,0,0.08);" />
+  <img src="assets/pontoon-destinations.png" alt="Pontoon Destinations" width="980" />
 </div>
 
 ## Key Features
