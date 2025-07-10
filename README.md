@@ -11,8 +11,8 @@
 
 <div align="center">
     <div>
-        <a href="https://pontoon-data.github.io/Pontoon/"><strong>Docs</strong></a> ·
-        <a href="https://pontoon-data.github.io/Pontoon/getting-started/quick-start/"><strong>Quick Start</strong></a> ·
+        <a href="https://docs.getpontoon.com/"><strong>Docs</strong></a> ·
+        <a href="https://docs.getpontoon.com/getting-started/quick-start/"><strong>Quick Start</strong></a> ·
         <a href="https://github.com/pontoon-data/Pontoon/issues"><strong>Report Bug</strong></a> ·
         <a href="https://getpontoon.com/contact"><strong>Contact</strong></a> ·
     </div>
@@ -38,17 +38,34 @@ Pontoon is an open source, self-hosted data export platform. Build data export f
 
 ## Key Features
 
-- **🚀 Easy Deployment**: [Get started](https://pontoon-data.github.io/Pontoon/getting-started/quick-start/) in minutes with Docker or deploy to AWS Fargate
-- **🎯 Major Data Warehouses Integrations**: Supports Snowflake, BigQuery, Redshift, and Postgres as sources and destinations
+- **🚀 Easy Deployment**: [Get started](https://docs.getpontoon.com/getting-started/quick-start/) in minutes with Docker or deploy to AWS Fargate
+- **🎯 Major Data Warehouses Integrations**: Supports [Snowflake](https://www.snowflake.com/), [Google BigQuery](https://cloud.google.com/bigquery), [Amazon Redshift](https://aws.amazon.com/redshift/), and [Postgres](https://www.postgresql.org/) as sources and destinations
 - **☁️ Multi-cloud**: Send data from any cloud to any cloud. Amazon Redshift ➡️ Google BigQuery? No problem!
 - **⚡ Automated Syncs**: Schedule data transfers with automatic backfills and incremental loads
 - **✨ Web Interface**: User-friendly dashboard for managing syncs, built with React/Nextjs
 - **🔌 REST API**: Programmatic access to all Pontoon features, built with FastAPI
 
+# Quick Start
+
+Get Pontoon running in seconds with our official docker image. Visit our [docs](https://docs.getpontoon.com/getting-started/quick-start/) for more information.
+
+```sh
+docker run \
+    --name pontoon \
+    -p 3000:3000 \
+    --rm \
+    --pull=always \
+    -v pontoon-internal-postgres:/var/lib/postgresql/data \
+    -v pontoon-internal-redis:/data \
+    ghcr.io/pontoon-data/pontoon:latest
+```
+
+To view the Web UI: `localhost:3000`. To view the OpenAPI docs / test the API: `localhost:8000/docs`
+
 ## Running Pontoon with Docker Compose
+
+To build Pontoon from source, use Docker Compose.
 
 ```sh
 docker compose up --build
 ```
-
-To view the Web UI: `localhost:3000`. To view the OpenAPI docs / test the API: `localhost:8000/docs`
