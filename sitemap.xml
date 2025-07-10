@@ -2,62 +2,62 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
     <url>
          <loc>https://getpontoon.com/</loc>
-         <lastmod>2025-07-09</lastmod>
+         <lastmod>2025-07-10</lastmod>
     </url>
     <url>
          <loc>https://getpontoon.com/getting-started/architecture/</loc>
-         <lastmod>2025-07-09</lastmod>
+         <lastmod>2025-07-10</lastmod>
     </url>
     <url>
          <loc>https://getpontoon.com/getting-started/aws-fargate/</loc>
-         <lastmod>2025-07-09</lastmod>
+         <lastmod>2025-07-10</lastmod>
     </url>
     <url>
          <loc>https://getpontoon.com/getting-started/docker-compose/</loc>
-         <lastmod>2025-07-09</lastmod>
+         <lastmod>2025-07-10</lastmod>
     </url>
     <url>
          <loc>https://getpontoon.com/getting-started/quick-start/</loc>
-         <lastmod>2025-07-09</lastmod>
+         <lastmod>2025-07-10</lastmod>
     </url>
     <url>
          <loc>https://getpontoon.com/getting-started/transfer-quick-start/</loc>
-         <lastmod>2025-07-09</lastmod>
+         <lastmod>2025-07-10</lastmod>
     </url>
     <url>
          <loc>https://getpontoon.com/sources-destinations/overview/</loc>
-         <lastmod>2025-07-09</lastmod>
+         <lastmod>2025-07-10</lastmod>
     </url>
     <url>
          <loc>https://getpontoon.com/sources-destinations/destinations/bigquery/</loc>
-         <lastmod>2025-07-09</lastmod>
+         <lastmod>2025-07-10</lastmod>
     </url>
     <url>
          <loc>https://getpontoon.com/sources-destinations/destinations/postgresql/</loc>
-         <lastmod>2025-07-09</lastmod>
+         <lastmod>2025-07-10</lastmod>
     </url>
     <url>
          <loc>https://getpontoon.com/sources-destinations/destinations/redshift/</loc>
-         <lastmod>2025-07-09</lastmod>
+         <lastmod>2025-07-10</lastmod>
     </url>
     <url>
          <loc>https://getpontoon.com/sources-destinations/destinations/snowflake/</loc>
-         <lastmod>2025-07-09</lastmod>
+         <lastmod>2025-07-10</lastmod>
     </url>
     <url>
          <loc>https://getpontoon.com/sources-destinations/sources/bigquery/</loc>
-         <lastmod>2025-07-09</lastmod>
+         <lastmod>2025-07-10</lastmod>
     </url>
     <url>
          <loc>https://getpontoon.com/sources-destinations/sources/postgresql/</loc>
-         <lastmod>2025-07-09</lastmod>
+         <lastmod>2025-07-10</lastmod>
     </url>
     <url>
          <loc>https://getpontoon.com/sources-destinations/sources/redshift/</loc>
-         <lastmod>2025-07-09</lastmod>
+         <lastmod>2025-07-10</lastmod>
     </url>
     <url>
          <loc>https://getpontoon.com/sources-destinations/sources/snowflake/</loc>
-         <lastmod>2025-07-09</lastmod>
+         <lastmod>2025-07-10</lastmod>
     </url>
 </urlset>
