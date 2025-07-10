@@ -1225,9 +1225,10 @@
 <a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="w">    </span>--name<span class="w"> </span>pontoon<span class="w"> </span><span class="se">\</span>
 <a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="w">    </span>-p<span class="w"> </span><span class="m">3000</span>:3000<span class="w"> </span><span class="se">\</span>
 <a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="w">    </span>--rm<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="w">    </span>-v<span class="w"> </span>pontoon-internal-postgres:/var/lib/postgresql/data<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="w">    </span>-v<span class="w"> </span>redis-data:/data<span class="w"> </span>pontoon:0.0.1
-<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="w">    </span><span class="c1"># TODO : DOCKER REGISTRY URL</span>
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="w">    </span>--pull<span class="o">=</span>always<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="w">    </span>-v<span class="w"> </span>pontoon-internal-postgres:/var/lib/postgresql/data<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="w">    </span>-v<span class="w"> </span>pontoon-internal-redis:/data<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a><span class="w">    </span>ghcr.io/pontoon-data/pontoon:latest
 </code></pre></div>
 <h2 id="step-3-youre-ready">Step 3: You're Ready! 🚀<a class="headerlink" href="#step-3-youre-ready" title="Permanent link">&para;</a></h2>
 <p>Navigate to <code>http://localhost:3000</code> to start exploring Pontoon or checkout the API docs at <code>http://localhost:8000/docs</code>.</p>
