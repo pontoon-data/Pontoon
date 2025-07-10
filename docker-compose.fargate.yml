@@ -4,65 +4,97 @@ services:
 
   frontend:
     image: ghcr.io/pontoon-data/pontoon-frontend:${IMAGE_VERSION}
-    env_file:
-      - ./fargate.env
+    ports:
+      - "3000:3000"
+    environment:
+      NEXT_TELEMETRY_DISABLED: 1
+      PONTOON_API_ENDPOINT: ${FARGATE_API_ENDPOINT}
     logging:
       driver: awslogs
       options:
-        awslogs-group: /ecs/pontoon-fargate
-        awslogs-region: ca-central-1
+        awslogs-group: ${FARGATE_LOG_GROUP}
+        awslogs-region: ${FARGATE_LOG_REGION}
         awslogs-stream-prefix: pontoon-frontend
 
   api:
     image: ghcr.io/pontoon-data/pontoon-api:${IMAGE_VERSION}
-    env_file:
-      - ./fargate.env
+    ports:
+      - "8000:8000"
+    environment:
+      POSTGRES_HOST: ${FARGATE_POSTGRES_HOST}
+      POSTGRES_PORT: ${POSTGRES_PORT}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DATABASE: ${POSTGRES_DATABASE}
+      ALLOW_ORIGIN: ${FRONT_END_URL}
+      CELERY_BROKER_URL: ${FARGATE_CELERY_BROKER_URL}
+      CELERY_RESULT_BACKEND: ${FARGATE_CELERY_RESULT_BACKEND}
+      PONTOON_API_ENDPOINT: ${FARGATE_API_ENDPOINT}
     logging:
       driver: awslogs
       options:
-        awslogs-group: /ecs/pontoon-fargate
-        awslogs-region: ca-central-1
+        awslogs-group: ${FARGATE_LOG_GROUP}
+        awslogs-region: ${FARGATE_LOG_REGION}
         awslogs-stream-prefix: pontoon-api
 
   redis:
+    image: redis:7-alpine
+    volumes:
+      - redis-data:/data
+    ports:
+      - "6379:6379"
+    command: ["redis-server", "--appendonly", "yes", "--appendfsync", "always"]
     logging:
       driver: awslogs
       options:
-        awslogs-group: /ecs/pontoon-fargate
-        awslogs-region: ca-central-1
+        awslogs-group: ${FARGATE_LOG_GROUP}
+        awslogs-region: ${FARGATE_LOG_REGION}
         awslogs-stream-prefix: pontoon-redis
 
   postgres:
     image: postgres:17.5-alpine
-    env_file:
-      - ./fargate.env
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DATABASE}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
     logging:
       driver: awslogs
       options:
-        awslogs-group: /ecs/pontoon-fargate
-        awslogs-region: ca-central-1
+        awslogs-group: ${FARGATE_LOG_GROUP}
+        awslogs-region: ${FARGATE_LOG_REGION}
         awslogs-stream-prefix: pontoon-postgres
   
   worker:
     image: ghcr.io/pontoon-data/pontoon-worker:${IMAGE_VERSION}
-    env_file:
-      - ./fargate.env
+    environment:
+      CELERY_BROKER_URL: ${FARGATE_CELERY_BROKER_URL}
+      CELERY_RESULT_BACKEND: ${FARGATE_CELERY_RESULT_BACKEND}
+      PONTOON_API_ENDPOINT: ${FARGATE_API_ENDPOINT}
+    command: celery -A pontoon.celery.celery_app worker --loglevel=info
     logging:
       driver: awslogs
       options:
-        awslogs-group: /ecs/pontoon-fargate
-        awslogs-region: ca-central-1
+        awslogs-group: ${FARGATE_LOG_GROUP}
+        awslogs-region: ${FARGATE_LOG_REGION}
         awslogs-stream-prefix: pontoon-worker
 
   beat:
     image: ghcr.io/pontoon-data/pontoon-beat:${IMAGE_VERSION}
-    env_file:
-      - ./fargate.env
+    environment:
+      CELERY_BROKER_URL: ${FARGATE_CELERY_BROKER_URL}
+      CELERY_RESULT_BACKEND: ${FARGATE_CELERY_RESULT_BACKEND}
+    command: celery -A pontoon.celery.celery_app beat --scheduler redbeat.RedBeatScheduler --loglevel=info
     logging:
       driver: awslogs
       options:
-        awslogs-group: /ecs/pontoon-fargate
-        awslogs-region: ca-central-1
+        awslogs-group: ${FARGATE_LOG_GROUP}
+        awslogs-region: ${FARGATE_LOG_REGION}
         awslogs-stream-prefix: pontoon-beat
 
-
+volumes:
+  postgres-data:
+  redis-data:
