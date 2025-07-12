@@ -1,8 +1,0 @@
-node_modules
-.next
-
-.env.*
-*.env
-sample.env.local
-
-Dockerfile
