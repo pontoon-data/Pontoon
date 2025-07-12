@@ -5,7 +5,7 @@ services:
   frontend:
     image: pontoon-frontend:${IMAGE_VERSION}
     build:
-      context: ./web-app/package
+      context: ./web-app/pontoon
       dockerfile: Dockerfile
     ports:
       - "3000:3000"
