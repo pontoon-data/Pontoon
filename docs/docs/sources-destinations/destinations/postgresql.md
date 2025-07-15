@@ -29,11 +29,9 @@ Before configuring PostgreSQL as a destination, ensure you have:
 
 ### Step 1: Create PostgreSQL Resources
 
-#### Create Database and User
+#### Create User
 
 ```sql
--- Create database
-CREATE DATABASE analytics;
 
 -- Create user
 CREATE USER pontoon_user WITH PASSWORD 'your_secure_password';
@@ -42,15 +40,10 @@ CREATE USER pontoon_user WITH PASSWORD 'your_secure_password';
 CREATE SCHEMA raw_data;
 
 -- Grant permissions
-GRANT CONNECT ON DATABASE analytics TO pontoon_user;
+GRANT CONNECT ON DATABASE ... TO pontoon_user;
 GRANT USAGE ON SCHEMA raw_data TO pontoon_user;
 GRANT CREATE ON SCHEMA raw_data TO pontoon_user;
 GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA raw_data TO pontoon_user;
-GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA raw_data TO pontoon_user;
-
--- Grant future permissions
-ALTER DEFAULT PRIVILEGES IN SCHEMA raw_data GRANT ALL ON TABLES TO pontoon_user;
-ALTER DEFAULT PRIVILEGES IN SCHEMA raw_data GRANT ALL ON SEQUENCES TO pontoon_user;
 ```
 
 ### Step 2: Configure Pontoon
