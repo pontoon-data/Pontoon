@@ -2,6 +2,7 @@ from typing import List, Dict, Tuple, Generator, Any
 from sqlalchemy import text
 
 from pontoon.base import Destination, Dataset, Stream, Record, Progress, Mode
+from pontoon.source.sql_source import SQLUtil
 from pontoon.destination.sql_destination import SQLDestination
 from pontoon.destination.s3_destination import S3Destination, S3Config
 
@@ -11,13 +12,13 @@ class RedshiftSQLUtil:
 
     @staticmethod
     def create_temp_table(table_name:str, like_table_name:str) -> str:
-        return f"CREATE TEMP TABLE {table_name} "\
-               f"(LIKE {like_table_name})"
+        return f"CREATE TEMP TABLE {SQLUtil.safe_identifier(table_name)} "\
+               f"(LIKE {SQLUtil.safe_identifier(like_table_name)})"
     
 
     @staticmethod
     def copy_from_s3(table_name:str, s3_uri:str, iam_role:str, s3_region:str) -> str:
-        return f"COPY {table_name} "\
+        return f"COPY {SQLUtil.safe_identifier(table_name)} "\
                f"FROM '{s3_uri}' "\
                f"IAM_ROLE '{iam_role}' "\
                f"FORMAT AS PARQUET "\
@@ -26,13 +27,14 @@ class RedshiftSQLUtil:
 
     @staticmethod
     def upsert(target_table_name:str, stage_table_name:str, cols:List[str], primary_key:str) -> (str, str):
-        cols_str = ','.join(cols)
-        delete_sql = f"DELETE FROM {target_table_name} "\
-                     f"USING {stage_table_name} "\
-                     f"WHERE {target_table_name}.{primary_key} = {stage_table_name}.{primary_key}"
+        s = SQLUtil.safe_identifier
+        cols_str = ','.join([s(col) for col in cols])
+        delete_sql = f"DELETE FROM {s(target_table_name)} "\
+                     f"USING {s(stage_table_name)} "\
+                     f"WHERE {s(target_table_name)}.{s(primary_key)} = {s(stage_table_name)}.{s(primary_key)}"
 
-        insert_sql = f"INSERT INTO {target_table_name} ({cols_str}) "\
-                     f"(SELECT {cols_str} FROM {stage_table_name})"
+        insert_sql = f"INSERT INTO {s(target_table_name)} ({cols_str}) "\
+                     f"(SELECT {cols_str} FROM {s(stage_table_name)})"
 
         return delete_sql, insert_sql
 

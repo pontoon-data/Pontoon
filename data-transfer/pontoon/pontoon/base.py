@@ -53,7 +53,8 @@ class Stream:
     # python types that have no Arrow equivalent have to be "simplified"
     PY_CONVERSION_MAP = {
         UUID: str,
-        Decimal: float
+        Decimal: float,
+        'TIMESTAMP_NTZ': datetime
     }
 
     def __init__(self, name:str, schema_name:str, schema:pa.Schema, primary_field:str=None, cursor_field:str=None, filters:Dict[str,Any]=None):

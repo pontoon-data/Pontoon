@@ -3,6 +3,7 @@ from typing import List, Dict, Any
 from datetime import datetime
 import snowflake.connector
 from pontoon.base import Namespace, Destination, Stream, Dataset, Record, Progress
+from pontoon.source.sql_source import SQLUtil
 from pontoon.destination import ObjectStoreBase
 
 
@@ -26,12 +27,12 @@ class SnowflakeStorageDestination(ObjectStoreBase):
     def _get_snowflake_client(self):
         c = self._config.get('connect')
         return snowflake.connector.connect(
-            user=c['username'],
-            password=c['password'],
+            user=c['user'],
+            password=c['access_token'],
             account=c['account'],
             warehouse=c['warehouse'],
             database=c['database'],
-            schema=c['schema']
+            schema=c['target_schema']
         )
 
     
@@ -78,7 +79,7 @@ class SnowflakeStorageDestination(ObjectStoreBase):
 
             snow = self._get_snowflake_client()
             cur = snow.cursor()
-            cur.execute(f"CREATE OR REPLACE STAGE {self._stage_name} FILE_FORMAT = (TYPE = PARQUET)")
+            cur.execute(f"CREATE OR REPLACE STAGE {SQLUtil.safe_identifier(self._stage_name)} FILE_FORMAT = (TYPE = PARQUET)")
             cur.close()
             snow.close()
 

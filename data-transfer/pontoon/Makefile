@@ -5,7 +5,7 @@ build-wheel:
 	python -m build --wheel
 
 test:
-	pytest
+	pytest -s
 
 install-dev:
 	pip install -e .

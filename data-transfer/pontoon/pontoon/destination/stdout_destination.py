@@ -24,11 +24,11 @@ class StdoutDestination(Destination):
             print(stream.schema)
             print("===")
             for record in ds.read(stream):
-                print(f"    {record.data}")
-                count += 1
+                if count < self._limit:
+                    print(f"    {record.data}")
+                    count += 1
+                
                 self._progress_callback(Progress(-1, count))
-                if count >= self._limit:
-                    break
             print('===')
         self._progress_callback(Progress(count, 0))
 
