@@ -1,3 +1,4 @@
+import json
 from typing import List, Dict, Tuple, Generator, Any
 from sqlalchemy import create_engine, text
 
@@ -57,7 +58,10 @@ class BigQueryDestination(SQLDestination):
         # big query connection
         auth_type = connect.get('auth_type')
         if auth_type == 'service_account':       
-            self._engine = create_engine('bigquery://', credentials_info=connect['service_account'])
+            self._engine = create_engine(
+                f"bigquery://{connect['project_id']}", 
+                credentials_info=json.loads(connect['service_account'])
+            )
         else:
             raise Exception(f"BigQuery (destination-bigquery) does not support auth type '{auth_type}'")
 

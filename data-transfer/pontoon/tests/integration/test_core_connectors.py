@@ -241,7 +241,7 @@ bigquery_dest = get_destination(
             'vendor_type': 'bigquery',
             'gcs_bucket_name': os.environ['GCS_BUCKET'],
             'gcs_bucket_path': 'pontoon',
-            'service_account': json.loads(open(os.environ['GCP_SERVICE_ACCOUNT_FILE']).read()),
+            'service_account': open(os.environ['GCP_SERVICE_ACCOUNT_FILE']).read(),
             'target_schema': 'target'
         }
     }

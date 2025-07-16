@@ -34,18 +34,18 @@ class RedshiftPasswordConnectionInfo(ConnectionInfo):
 
 class SnowflakePasswordConnectionInfo(ConnectionInfo):
     vendor_type: Literal["snowflake"]
-    auth_type: str = "basic"
+    auth_type: str = "access_token"
     user: str
     password: str
     account: str
     warehouse: str
+    database: str
 
 
 class BigQueryServiceAccountConnectionInfo(ConnectionInfo):
     vendor_type: Literal["bigquery"]
     auth_type: str = "service_account"
     project_id: str
-    dataset: str
     service_account: str # JSON blob
 
 
