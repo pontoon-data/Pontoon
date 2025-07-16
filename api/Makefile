@@ -1,12 +1,16 @@
-db-migrate-dev:
-	python -m pgmigrate -c postgresql://dev:dev@localhost:5432/pontoon -d db/ -t 1 migrate
 
+export ENV=test
+export POSTGRES_HOST=localhost
+export POSTGRES_PORT=5436
+export POSTGRES_USER=test
+export POSTGRES_PASSWORD=test
+export POSTGRES_DATABASE=pontoon
+export ALLOW_ORIGIN=http://localhost:3000
+export JWT_ALGORITHM=HS256
+export JWT_SIGNING_KEY=test_key
+export SKIP_TRANSFERS=true
 
-# Production database migration
-db-migrate:
-	python -m pgmigrate -d db/ -t 1 migrate 
-
-app-test:
+test:
 	@echo "==> Stopping test database (if running)..."
 	docker stop api_test_db || true
 	docker rm api_test_db || true
@@ -17,12 +21,8 @@ app-test:
 	@echo "==> Running schema migrations..."
 	python -m pgmigrate -c postgresql://test:test@localhost:5436/pontoon -d db/ -t 1 migrate
 	@echo "==> Running unit tests..."
-	cd app && ENV=test pytest
+	cd app && pytest
 	@echo "==> Cleaning up test database..."
 	docker stop api_test_db || true
 	docker rm api_test_db || true
 	@echo "==> Done."
-
-app-install-dev:
-	pip install -e .
-

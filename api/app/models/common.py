@@ -11,6 +11,7 @@ class SensitiveFieldsMixin:
     @field_serializer( 
         'password', 
         'service_account',
+        'access_token',
         'aws_access_key_id',
         'aws_secret_access_key', 
         when_used='json', 

@@ -36,7 +36,7 @@ class SnowflakePasswordConnectionInfo(ConnectionInfo):
     vendor_type: Literal["snowflake"]
     auth_type: str = "access_token"
     user: str
-    password: str
+    access_token: str
     account: str
     warehouse: str
     database: str
