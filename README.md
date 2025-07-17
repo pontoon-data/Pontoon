@@ -64,6 +64,8 @@ To view the Web UI: `localhost:3000`. To view the OpenAPI docs / test the API: `
 
 ## Running Pontoon with Docker Compose
 
+**Requirements:** [Docker Compose v2](https://docs.docker.com/compose/install/)
+
 To build Pontoon from source, use Docker Compose.
 
 ```sh
