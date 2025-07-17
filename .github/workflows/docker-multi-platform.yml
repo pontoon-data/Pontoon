@@ -9,7 +9,7 @@ on:
       - "v*.*.*"
 
 env:
-  REGISTRY: ghcr.io/pontoon-data/Pontoon
+  REGISTRY: ghcr.io/pontoon-data/pontoon
   IMAGE_VERSION: ${{ github.ref_name }}
 
 jobs:
