@@ -71,7 +71,7 @@ jobs:
           # tags: ${{ steps.meta.outputs.tags }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
-          outputs: type=image,push-by-digest=true,name-canonical=true,push=true
+          outputs: type=image,name=${{ env.REGISTRY_IMAGE }}/pontoon-frontend,push-by-digest=true,name-canonical=true,push=true
 
       # Build and push api
       - name: Build and push api
@@ -85,7 +85,7 @@ jobs:
           # tags: ${{ steps.meta.outputs.tags }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
-          outputs: type=image,push-by-digest=true,name-canonical=true,push=true
+          outputs: type=image,name=${{ env.REGISTRY_IMAGE }}/pontoon-api,push-by-digest=true,name-canonical=true,push=true
 
       # Build and push worker
       - name: Build and push worker
@@ -99,7 +99,7 @@ jobs:
           # tags: ${{ steps.meta.outputs.tags }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
-          outputs: type=image,push-by-digest=true,name-canonical=true,push=true
+          outputs: type=image,name=${{ env.REGISTRY_IMAGE }}/pontoon-worker,push-by-digest=true,name-canonical=true,push=true
 
       # Build and push beat
       - name: Build and push beat
@@ -113,7 +113,7 @@ jobs:
           # tags: ${{ steps.meta.outputs.tags }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
-          outputs: type=image,push-by-digest=true,name-canonical=true,push=true
+          outputs: type=image,name=${{ env.REGISTRY_IMAGE }}/pontoon-beat,push-by-digest=true,name-canonical=true,push=true
 
       # Build and push unified image
       - name: Build and push unified
@@ -127,7 +127,7 @@ jobs:
           # tags: ${{ steps.meta.outputs.tags }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
-          outputs: type=image,push-by-digest=true,name-canonical=true,push=true
+          outputs: type=image,name=${{ env.REGISTRY_IMAGE }}/pontoon-unified,push-by-digest=true,name-canonical=true,push=true
 
       # Export digests
       - name: Export digests
