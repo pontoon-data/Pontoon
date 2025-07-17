@@ -126,8 +126,8 @@ jobs:
           cache-to: type=gha,mode=max
           outputs: type=image,name=${{ env.REGISTRY }}/pontoon-unified,push-by-digest=true,name-canonical=true,push=true
           build-args: |
-            API_IMAGE=${{ steps.build-api.outputs.digest }}
-            FRONTEND_IMAGE=${{ steps.build-frontend.outputs.digest }}
+            API_IMAGE=${{ env.REGISTRY }}/pontoon-api@${{ steps.meta.outputs.version }}
+            FRONTEND_IMAGE=${{ env.REGISTRY }}/pontoon-frontend@${{ steps.meta.outputs.version }}
 
       # Export digests
       - name: Export digests
