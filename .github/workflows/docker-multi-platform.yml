@@ -68,7 +68,7 @@ jobs:
           file: web-app/pontoon/Dockerfile
           platforms: ${{ matrix.platform }}
           labels: ${{ steps.meta.outputs.labels }}
-          tags: ${{ steps.meta.outputs.tags }}
+          # tags: ${{ steps.meta.outputs.tags }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
           outputs: type=image,push-by-digest=true,name-canonical=true,push=true
@@ -82,7 +82,7 @@ jobs:
           file: api/Dockerfile
           platforms: ${{ matrix.platform }}
           labels: ${{ steps.meta.outputs.labels }}
-          tags: ${{ steps.meta.outputs.tags }}
+          # tags: ${{ steps.meta.outputs.tags }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
           outputs: type=image,push-by-digest=true,name-canonical=true,push=true
@@ -96,7 +96,7 @@ jobs:
           file: data-transfer/pontoon/Dockerfile
           platforms: ${{ matrix.platform }}
           labels: ${{ steps.meta.outputs.labels }}
-          tags: ${{ steps.meta.outputs.tags }}
+          # tags: ${{ steps.meta.outputs.tags }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
           outputs: type=image,push-by-digest=true,name-canonical=true,push=true
@@ -110,7 +110,7 @@ jobs:
           file: data-transfer/pontoon/Dockerfile
           platforms: ${{ matrix.platform }}
           labels: ${{ steps.meta.outputs.labels }}
-          tags: ${{ steps.meta.outputs.tags }}
+          # tags: ${{ steps.meta.outputs.tags }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
           outputs: type=image,push-by-digest=true,name-canonical=true,push=true
@@ -124,7 +124,7 @@ jobs:
           file: Dockerfile
           platforms: ${{ matrix.platform }}
           labels: ${{ steps.meta.outputs.labels }}
-          tags: ${{ steps.meta.outputs.tags }}
+          # tags: ${{ steps.meta.outputs.tags }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
           outputs: type=image,push-by-digest=true,name-canonical=true,push=true
@@ -196,7 +196,7 @@ jobs:
           digests=""
           for f in "${{ runner.temp }}/digests/frontend-"*.digest; do
             digest=$(cat "$f")
-            digests="$digests ${{ env.REGISTRY }}/pontoon-frontend@$digest"
+            digests="$digests $digest"
           done
 
           docker buildx imagetools create \
@@ -208,7 +208,7 @@ jobs:
           digests=""
           for f in "${{ runner.temp }}/digests/api-"*.digest; do
             digest=$(cat "$f")
-            digests="$digests ${{ env.REGISTRY }}/pontoon-api@$digest"
+            digests="$digests $digest"
           done
 
           docker buildx imagetools create \
@@ -220,7 +220,7 @@ jobs:
           digests=""
           for f in "${{ runner.temp }}/digests/worker-"*.digest; do
             digest=$(cat "$f")
-            digests="$digests ${{ env.REGISTRY }}/pontoon-worker@$digest"
+            digests="$digests $digest"
           done
 
           docker buildx imagetools create \
@@ -232,7 +232,7 @@ jobs:
           digests=""
           for f in "${{ runner.temp }}/digests/beat-"*.digest; do
             digest=$(cat "$f")
-            digests="$digests ${{ env.REGISTRY }}/pontoon-beat@$digest"
+            digests="$digests $digest"
           done
 
           docker buildx imagetools create \
@@ -244,29 +244,29 @@ jobs:
           digests=""
           for f in "${{ runner.temp }}/digests/unified-"*.digest; do
             digest=$(cat "$f")
-            digests="$digests ${{ env.REGISTRY }}/pontoon-unified@$digest"
+            digests="$digests $digest"
           done
 
           docker buildx imagetools create \
             --tag ${{ env.REGISTRY }}/pontoon-unified:latest \
             $digests
 
-      # - name: Create and push manifest list (frontend)
-      #   run: |
-      #     docker buildx imagetools create $(cat ${{ runner.temp }}/digests/frontend-*.digest | xargs -I{} echo "${{ env.REGISTRY }}/pontoon-frontend@{}" | xargs) -t ${{ steps.meta.outputs.tags }}
+      - name: Inspect frontend
+        run: |
+          docker buildx imagetools inspect ${{ env.REGISTRY }}/pontoon-frontend:${{ steps.meta.outputs.version }}
 
-      # - name: Create and push manifest list (api)
-      #   run: |
-      #     docker buildx imagetools create $(cat ${{ runner.temp }}/digests/api-*.digest | xargs -I{} echo "${{ env.REGISTRY }}/pontoon-api@{}" | xargs) -t ${{ steps.meta.outputs.tags }}
+      - name: Inspect api
+        run: |
+          docker buildx imagetools inspect ${{ env.REGISTRY }}/pontoon-api:${{ steps.meta.outputs.version }}
 
-      # - name: Create and push manifest list (worker)
-      #   run: |
-      #     docker buildx imagetools create $(cat ${{ runner.temp }}/digests/worker-*.digest | xargs -I{} echo "${{ env.REGISTRY }}/pontoon-worker@{}" | xargs) -t ${{ steps.meta.outputs.tags }}
+      - name: Inspect worker
+        run: |
+          docker buildx imagetools inspect ${{ env.REGISTRY }}/pontoon-worker:${{ steps.meta.outputs.version }}
 
-      # - name: Create and push manifest list (beat)
-      #   run: |
-      #     docker buildx imagetools create $(cat ${{ runner.temp }}/digests/beat-*.digest | xargs -I{} echo "${{ env.REGISTRY }}/pontoon-beat@{}" | xargs) -t ${{ steps.meta.outputs.tags }}
+      - name: Inspect beat
+        run: |
+          docker buildx imagetools inspect ${{ env.REGISTRY }}/pontoon-beat:${{ steps.meta.outputs.version }}
 
-      # - name: Create and push manifest list (unified)
-      #   run: |
-      #     docker buildx imagetools create $(cat ${{ runner.temp }}/digests/unified-*.digest | xargs -I{} echo "${{ env.REGISTRY }}/pontoon-unified@{}" | xargs) -t ${{ steps.meta.outputs.tags }}
+      - name: Inspect unified
+        run: |
+          docker buildx imagetools inspect ${{ env.REGISTRY }}/pontoon-unified:${{ steps.meta.outputs.version }}
