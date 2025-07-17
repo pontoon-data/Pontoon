@@ -9,7 +9,7 @@ on:
       - "v*.*.*"
 
 env:
-  REGISTRY: ghcr.io/pontoon-data/pontoon
+  REGISTRY: ghcr.io/pontoon-data/Pontoon
   IMAGE_VERSION: ${{ github.ref_name }}
 
 jobs:
@@ -18,7 +18,9 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        platform: [linux/amd64, linux/arm64]
+        platform:
+          - linux/amd64
+          # - linux/arm64
     steps:
       - name: Prepare
         run: |
@@ -63,10 +65,12 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: ./web-app/pontoon
-          dockerfile: Dockerfile
+          file: Dockerfile
           platforms: ${{ matrix.platform }}
           labels: ${{ steps.meta.outputs.labels }}
           tags: ${{ steps.meta.outputs.tags }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
           outputs: type=image,push-by-digest=true,name-canonical=true,push=true
 
       # Build and push api
@@ -75,10 +79,12 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: .
-          dockerfile: api/Dockerfile
+          file: api/Dockerfile
           platforms: ${{ matrix.platform }}
           labels: ${{ steps.meta.outputs.labels }}
           tags: ${{ steps.meta.outputs.tags }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
           outputs: type=image,push-by-digest=true,name-canonical=true,push=true
 
       # Build and push worker
@@ -87,10 +93,12 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: data-transfer/pontoon
-          dockerfile: Dockerfile
+          file: Dockerfile
           platforms: ${{ matrix.platform }}
           labels: ${{ steps.meta.outputs.labels }}
           tags: ${{ steps.meta.outputs.tags }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
           outputs: type=image,push-by-digest=true,name-canonical=true,push=true
 
       # Build and push beat
@@ -99,10 +107,12 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: data-transfer/pontoon
-          dockerfile: Dockerfile
+          file: Dockerfile
           platforms: ${{ matrix.platform }}
           labels: ${{ steps.meta.outputs.labels }}
           tags: ${{ steps.meta.outputs.tags }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
           outputs: type=image,push-by-digest=true,name-canonical=true,push=true
 
       # Build and push unified image
@@ -111,10 +121,12 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: .
-          dockerfile: Dockerfile
+          file: Dockerfile
           platforms: ${{ matrix.platform }}
           labels: ${{ steps.meta.outputs.labels }}
           tags: ${{ steps.meta.outputs.tags }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
           outputs: type=image,push-by-digest=true,name-canonical=true,push=true
 
       # Export digests
