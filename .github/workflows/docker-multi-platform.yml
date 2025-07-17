@@ -196,8 +196,11 @@ jobs:
 
           echo "digests: $digests"
 
+          tags=$(jq -cr '.tags | map("-t " + .) | join(" ")' <<< "$DOCKER_METADATA_OUTPUT_JSON")
+          echo "tags: $tags"
+
           docker buildx imagetools create \
-            --tag ${{ env.REGISTRY }}/pontoon-frontend:latest \
+            $tags \
             $digests
 
       - name: Create and Push Manifest for api
@@ -208,8 +211,11 @@ jobs:
             digests="$digests $digest"
           done
 
+          tags=$(jq -cr '.tags | map("-t " + .) | join(" ")' <<< "$DOCKER_METADATA_OUTPUT_JSON")
+          echo "tags: $tags"
+
           docker buildx imagetools create \
-            --tag ${{ env.REGISTRY }}/pontoon-api:latest \
+            $tags \
             $digests
 
       - name: Create and Push Manifest for worker
@@ -220,8 +226,11 @@ jobs:
             digests="$digests $digest"
           done
 
+          tags=$(jq -cr '.tags | map("-t " + .) | join(" ")' <<< "$DOCKER_METADATA_OUTPUT_JSON")
+          echo "tags: $tags"
+
           docker buildx imagetools create \
-            --tag ${{ env.REGISTRY }}/pontoon-worker:latest \
+            $tags \
             $digests
 
       - name: Create and Push Manifest for beat
@@ -232,8 +241,11 @@ jobs:
             digests="$digests $digest"
           done
 
+          tags=$(jq -cr '.tags | map("-t " + .) | join(" ")' <<< "$DOCKER_METADATA_OUTPUT_JSON")
+          echo "tags: $tags"
+
           docker buildx imagetools create \
-            --tag ${{ env.REGISTRY }}/pontoon-beat:latest \
+            $tags \
             $digests
 
       - name: Create and Push Manifest for unified
@@ -244,8 +256,11 @@ jobs:
             digests="$digests $digest"
           done
 
+          tags=$(jq -cr '.tags | map("-t " + .) | join(" ")' <<< "$DOCKER_METADATA_OUTPUT_JSON")
+          echo "tags: $tags"
+
           docker buildx imagetools create \
-            --tag ${{ env.REGISTRY }}/pontoon-unified:latest \
+            $tags \
             $digests
 
       - name: Inspect frontend
