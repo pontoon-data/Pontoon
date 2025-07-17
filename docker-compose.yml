@@ -60,7 +60,7 @@ services:
       - postgres-data:/var/lib/postgresql/data
       - ./api/db/migrations/V0001__initial_pontoon_schema.sql:/docker-entrypoint-initdb.d/V0001__initial_pontoon_schema.sql
     ports:
-      - "5433:5432"
+      - "5432:5432"
     networks:
       - app-network
   

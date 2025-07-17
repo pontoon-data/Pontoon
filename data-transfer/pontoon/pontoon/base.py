@@ -105,19 +105,19 @@ class Stream:
         return self
     
     
-    def with_checksum(self, field_name:str='__checksum') -> 'Stream':
+    def with_checksum(self, field_name:str='pontoon__checksum') -> 'Stream':
         return self.with_field(field_name, pa.string(), self._compute_checksum)
     
     
-    def with_batch_id(self, batch_id:str, field_name:str='__batch_id') -> 'Stream':
+    def with_batch_id(self, batch_id:str, field_name:str='pontoon__batch_id') -> 'Stream':
         return self.with_field(field_name, pa.string(), batch_id)
         
     
-    def with_last_synced_at(self, sync_dt:datetime, field_name:str='__last_synced_at') -> 'Stream':
+    def with_last_synced_at(self, sync_dt:datetime, field_name:str='pontoon__last_synced_at') -> 'Stream':
         return self.with_field(field_name, pa.timestamp('us', tz='UTC'), sync_dt.isoformat())
     
     
-    def with_version(self, version:str, field_name='__version') -> 'Stream':
+    def with_version(self, version:str, field_name='pontoon__version') -> 'Stream':
         return self.with_field(field_name, pa.string(), version)
 
     

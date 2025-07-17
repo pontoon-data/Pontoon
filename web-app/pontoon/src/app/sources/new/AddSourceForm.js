@@ -108,12 +108,12 @@ const AddSourceForm = () => {
       setTestConnectionStatus(Status.FAILED);
       return;
     }
+    
     const params = {
       source_name: values.source_name,
       vendor_type: values.vendor_type,
       connection_info: {
         vendor_type: values.vendor_type,
-        auth_type: "basic",
         ...values[values.vendor_type],
       },
     };

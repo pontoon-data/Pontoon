@@ -55,10 +55,10 @@ class TestStream:
         stream.with_version('1.0.0')
         stream.with_last_synced_at(now)
 
-        self.schema = self.schema.append(pa.field('__checksum', pa.string()))
-        self.schema = self.schema.append(pa.field('__batch_id', pa.string()))
-        self.schema = self.schema.append(pa.field('__version', pa.string()))
-        self.schema = self.schema.append(pa.field('__last_synced_at', pa.timestamp('us', tz='UTC')))
+        self.schema = self.schema.append(pa.field('pontoon__checksum', pa.string()))
+        self.schema = self.schema.append(pa.field('pontoon__batch_id', pa.string()))
+        self.schema = self.schema.append(pa.field('pontoon__version', pa.string()))
+        self.schema = self.schema.append(pa.field('pontoon__last_synced_at', pa.timestamp('us', tz='UTC')))
 
         assert stream.schema.equals(self.schema)
 

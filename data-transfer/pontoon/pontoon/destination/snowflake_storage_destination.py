@@ -73,7 +73,7 @@ class SnowflakeStorageDestination(ObjectStoreBase):
 
         if self._create_stage:
             if self._stage_name == None:
-                self._stage_name = f"_transfer_{ds.meta.get('batch_id')}"
+                self._stage_name = f"pontoon_{ds.meta.get('batch_id')}"
             
             ds.meta['stage_name'] = self._stage_name
 

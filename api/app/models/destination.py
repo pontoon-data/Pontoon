@@ -35,6 +35,9 @@ class RedshiftS3ConnectionInfo(ConnectionInfo):
 class SnowflakeSMSConnectionInfo(ConnectionInfo):
     vendor_type: Literal["snowflake"]
     auth_type: str = "access_token"
+    stage_name: str = "PONTOON"
+    create_stage: bool = True
+    delete_stage: bool = True
     user: str
     access_token: str
     account: str

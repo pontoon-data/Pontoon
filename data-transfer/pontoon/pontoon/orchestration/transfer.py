@@ -1,8 +1,10 @@
 import os
 import json
+import uuid
 import sys
 import signal
 import argparse
+import traceback
 import requests
 from requests.exceptions import JSONDecodeError
 from abc import ABC, abstractmethod
@@ -175,6 +177,12 @@ class TransferCommand(Command):
             if progress.processed % 100000 == 0:
                 print(f"Writing destination: wrote={progress.processed})")
 
+
+    def _unlink_all(self, paths):
+        for path in paths:
+            if os.path.exists(path):
+                os.remove(path)
+
     
     def _schedule_to_replication_mode(self, schedule):
         period = schedule.get('frequency')
@@ -307,12 +315,10 @@ class TransferCommand(Command):
 
         # add integrity check fields to models
         with_config = {
-            'checksum': True,
-            'batch_id': True,
-            'version': '1.0.0',
-            'last_sync': True
+             'batch_id': True,
+             'last_sync': True
         }
-
+        
         try:
             # pull in configuration from the API
             self._fetch_configuration()      
@@ -333,10 +339,13 @@ class TransferCommand(Command):
 
         # configure our data source(s) based on models
         sources = []
+        source_caches = []
 
         try:
             for source_id, source in self._sources.items():
             
+                cache_db = f"cache-{uuid.uuid4().hex}.db"
+
                 models = [model for model in self._models if model['source_id'] == source_id]
                 
                 streams = [{
@@ -356,13 +365,15 @@ class TransferCommand(Command):
                         'streams': streams,
                         'connect': source['connection_info']
                     },
-                    cache_implementation=MemoryCache,
+                    cache_implementation=SqliteCache,
                     cache_config = {
-                        'chunk_size': 1000,
-                        'db': f"cache-{source_id}.db"
+                        'chunk_size': 1024,
+                        'db': cache_db
                     }
                 )
                 sources.append(connector)
+                source_caches.append(cache_db)
+
         except Exception as e:
             return self._failure(f"Configuring job source connector(s) failed: {e}")
 
@@ -388,17 +399,20 @@ class TransferCommand(Command):
                 # read records into cache
                 ds = source.read(progress_callback=self._read_progress_handler)
             except Exception as e:
+                self._unlink_all(source_caches)
                 return self._failure(f"Reading source failed: {e}")
             
             try:
                 # write records to destination
                 destination.write(ds, progress_callback=self._write_progress_handler)
             
-                # clean up source cache
-                cache_path = Path(f"cache-{source_id}.db")
-                cache_path.unlink(missing_ok=True)
+                # clean up source caches
+                self._unlink_all(source_caches)
+
             except Exception as e:
-                return self._failure(f"Transfer to destination failed: {e}")
+                self._unlink_all(source_caches)
+                tb = "\n".join(traceback.format_tb(e.__traceback__))
+                return self._failure(f"Transfer to destination failed: {e}, Traceback: {tb}")
         
 
         # complete our execution

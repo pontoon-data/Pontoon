@@ -38,7 +38,7 @@ class GCSDestination(ObjectStoreBase):
 
         # our GCP service account
         with tempfile.NamedTemporaryFile(mode='w', suffix=".json", delete=False) as temp_file:
-            temp_file.write(json.dumps(connect.get('service_account')))
+            temp_file.write(connect.get('service_account'))
             self._service_account_file = temp_file.name
 
     

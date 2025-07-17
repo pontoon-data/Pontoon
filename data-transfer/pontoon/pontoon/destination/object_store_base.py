@@ -41,6 +41,7 @@ class ObjectStoreBase(Destination):
         cols = stream.schema.names
         for record in batch:
             table_rows.append({cols[i]: record.data[i] for i in range(len(cols))})
+        
         return pa.Table.from_pylist(table_rows, schema=stream.schema)
 
 
