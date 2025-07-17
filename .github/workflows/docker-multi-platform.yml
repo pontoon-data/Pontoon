@@ -65,7 +65,7 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: ./web-app/pontoon
-          file: Dockerfile
+          file: web-app/pontoon/Dockerfile
           platforms: ${{ matrix.platform }}
           labels: ${{ steps.meta.outputs.labels }}
           tags: ${{ steps.meta.outputs.tags }}
@@ -93,7 +93,7 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: data-transfer/pontoon
-          file: Dockerfile
+          file: data-transfer/pontoon/Dockerfile
           platforms: ${{ matrix.platform }}
           labels: ${{ steps.meta.outputs.labels }}
           tags: ${{ steps.meta.outputs.tags }}
@@ -107,7 +107,7 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: data-transfer/pontoon
-          file: Dockerfile
+          file: data-transfer/pontoon/Dockerfile
           platforms: ${{ matrix.platform }}
           labels: ${{ steps.meta.outputs.labels }}
           tags: ${{ steps.meta.outputs.tags }}
