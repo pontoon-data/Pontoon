@@ -70,7 +70,6 @@ jobs:
           file: web-app/pontoon/Dockerfile
           platforms: ${{ matrix.platform }}
           labels: ${{ steps.meta.outputs.labels }}
-          # tags: ${{ steps.meta.outputs.tags }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
           outputs: type=image,name=${{ env.REGISTRY }}/pontoon-frontend,push-by-digest=true,name-canonical=true,push=true
@@ -84,7 +83,6 @@ jobs:
           file: api/Dockerfile
           platforms: ${{ matrix.platform }}
           labels: ${{ steps.meta.outputs.labels }}
-          # tags: ${{ steps.meta.outputs.tags }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
           outputs: type=image,name=${{ env.REGISTRY }}/pontoon-api,push-by-digest=true,name-canonical=true,push=true
@@ -98,7 +96,6 @@ jobs:
           file: data-transfer/pontoon/Dockerfile
           platforms: ${{ matrix.platform }}
           labels: ${{ steps.meta.outputs.labels }}
-          # tags: ${{ steps.meta.outputs.tags }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
           outputs: type=image,name=${{ env.REGISTRY }}/pontoon-worker,push-by-digest=true,name-canonical=true,push=true
@@ -112,7 +109,6 @@ jobs:
           file: data-transfer/pontoon/Dockerfile
           platforms: ${{ matrix.platform }}
           labels: ${{ steps.meta.outputs.labels }}
-          # tags: ${{ steps.meta.outputs.tags }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
           outputs: type=image,name=${{ env.REGISTRY }}/pontoon-beat,push-by-digest=true,name-canonical=true,push=true
@@ -126,10 +122,12 @@ jobs:
           file: Dockerfile
           platforms: ${{ matrix.platform }}
           labels: ${{ steps.meta.outputs.labels }}
-          # tags: ${{ steps.meta.outputs.tags }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
           outputs: type=image,name=${{ env.REGISTRY }}/pontoon-unified,push-by-digest=true,name-canonical=true,push=true
+          build-args: |
+            API_IMAGE=${{ steps.build-api.outputs.digest }}
+            FRONTEND_IMAGE=${{ steps.build-frontend.outputs.digest }}
 
       # Export digests
       - name: Export digests

@@ -1,5 +1,8 @@
-FROM pontoon-api:0.0.1 AS pontoon-api
-FROM pontoon-frontend:0.0.1 AS pontoon-frontend
+ARG API_IMAGE
+ARG FRONTEND_IMAGE
+
+FROM ${API_IMAGE} AS pontoon-api
+FROM ${FRONTEND_IMAGE} AS pontoon-frontend
 
 FROM python:3.12-slim
 
