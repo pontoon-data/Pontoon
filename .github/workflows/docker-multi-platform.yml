@@ -152,6 +152,9 @@ jobs:
     permissions:
       packages: write
     needs: build
+    strategy:
+      matrix:
+        component: [frontend] #api, worker, beat, unified]
     steps:
       - name: Download digests
         uses: actions/download-artifact@v4
@@ -175,21 +178,17 @@ jobs:
         uses: docker/metadata-action@v5
         with:
           images: |
-            ${{ env.REGISTRY }}/pontoon-api
-            ${{ env.REGISTRY }}/pontoon-frontend
-            ${{ env.REGISTRY }}/pontoon-worker
-            ${{ env.REGISTRY }}/pontoon-beat
-            ${{ env.REGISTRY }}/pontoon-unified
+            ${{ env.REGISTRY }}/pontoon-${{ matrix.component }}
           tags: |
             type=ref,event=branch
             type=ref,event=tag
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
 
-      - name: Create and Push Manifest for frontend
+      - name: Create and Push Manifest
         run: |
           digests=""
-          for f in "${{ runner.temp }}/digests/frontend-"*.digest; do
+          for f in "${{ runner.temp }}/digests/${{ matrix.component }}-"*.digest; do
             digest=$(cat "$f")
             digests="$digests $digest"
           done
@@ -203,82 +202,6 @@ jobs:
             $tags \
             $digests
 
-      - name: Create and Push Manifest for api
+      - name: Inspect image
         run: |
-          digests=""
-          for f in "${{ runner.temp }}/digests/api-"*.digest; do
-            digest=$(cat "$f")
-            digests="$digests $digest"
-          done
-
-          tags=$(jq -cr '.tags | map("-t " + .) | join(" ")' <<< "$DOCKER_METADATA_OUTPUT_JSON")
-          echo "tags: $tags"
-
-          docker buildx imagetools create \
-            $tags \
-            $digests
-
-      - name: Create and Push Manifest for worker
-        run: |
-          digests=""
-          for f in "${{ runner.temp }}/digests/worker-"*.digest; do
-            digest=$(cat "$f")
-            digests="$digests $digest"
-          done
-
-          tags=$(jq -cr '.tags | map("-t " + .) | join(" ")' <<< "$DOCKER_METADATA_OUTPUT_JSON")
-          echo "tags: $tags"
-
-          docker buildx imagetools create \
-            $tags \
-            $digests
-
-      - name: Create and Push Manifest for beat
-        run: |
-          digests=""
-          for f in "${{ runner.temp }}/digests/beat-"*.digest; do
-            digest=$(cat "$f")
-            digests="$digests $digest"
-          done
-
-          tags=$(jq -cr '.tags | map("-t " + .) | join(" ")' <<< "$DOCKER_METADATA_OUTPUT_JSON")
-          echo "tags: $tags"
-
-          docker buildx imagetools create \
-            $tags \
-            $digests
-
-      - name: Create and Push Manifest for unified
-        run: |
-          digests=""
-          for f in "${{ runner.temp }}/digests/unified-"*.digest; do
-            digest=$(cat "$f")
-            digests="$digests $digest"
-          done
-
-          tags=$(jq -cr '.tags | map("-t " + .) | join(" ")' <<< "$DOCKER_METADATA_OUTPUT_JSON")
-          echo "tags: $tags"
-
-          docker buildx imagetools create \
-            $tags \
-            $digests
-
-      - name: Inspect frontend
-        run: |
-          docker buildx imagetools inspect ${{ env.REGISTRY }}/pontoon-frontend:${{ steps.meta.outputs.version }}
-
-      - name: Inspect api
-        run: |
-          docker buildx imagetools inspect ${{ env.REGISTRY }}/pontoon-api:${{ steps.meta.outputs.version }}
-
-      - name: Inspect worker
-        run: |
-          docker buildx imagetools inspect ${{ env.REGISTRY }}/pontoon-worker:${{ steps.meta.outputs.version }}
-
-      - name: Inspect beat
-        run: |
-          docker buildx imagetools inspect ${{ env.REGISTRY }}/pontoon-beat:${{ steps.meta.outputs.version }}
-
-      - name: Inspect unified
-        run: |
-          docker buildx imagetools inspect ${{ env.REGISTRY }}/pontoon-unified:${{ steps.meta.outputs.version }}
+          docker buildx imagetools inspect ${{ env.REGISTRY }}/pontoon-${{ matrix.component }}:${{ steps.meta.outputs.version }}
