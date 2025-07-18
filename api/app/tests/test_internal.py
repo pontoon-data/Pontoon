@@ -24,7 +24,7 @@ def test_get_source():
     o = r.json()
 
     # ensure we're getting sensitive field values
-    assert o['connection_info']['password'] == 'mypass'
+    assert o['connection_info']['access_token'] == 'token'
 
 
 def test_get_model():
@@ -46,7 +46,7 @@ def test_get_destination():
     o = r.json()
 
     # ensure we're getting sensitive field values
-    assert o['connection_info']['password'] == 'mypass'
+    assert o['connection_info']['access_token'] == 'token'
 
 
 def test_create_transfer_run():

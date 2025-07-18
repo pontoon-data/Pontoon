@@ -39,11 +39,12 @@ def AuthTestClient(app):
         'azp': ''
     })
 
-    client = TestClient(
-        app,
-        headers = {
-            "Authorization": f"Bearer {jwt_token}"
-        }
-    )  
+    # client = TestClient(
+    #     app,
+    #     headers = {
+    #         "Authorization": f"Bearer {jwt_token}"
+    #     }
+    # )
+    client = TestClient(app)  
 
     return client

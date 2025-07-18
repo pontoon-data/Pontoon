@@ -76,7 +76,7 @@ class PostgresSQLUtil:
         # Build the full SQL statement
         upsert_sql = sql.SQL("""
             INSERT INTO {target_table} ({columns})
-            SELECT {columns}
+            SELECT DISTINCT ON ({pk}) {columns}
             FROM {stage_table}
             ON CONFLICT ({pk})
             DO UPDATE SET {updates}

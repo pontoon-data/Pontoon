@@ -8,6 +8,7 @@ Before configuring Snowflake as a destination, ensure you have:
 
 - **Snowflake Account**: Active Snowflake account with appropriate permissions
 - **Warehouse**: Snowflake warehouse for compute resources
+- **Database**: Database to store Pontoon data
 - **Schema**: Target schema within the database
 - **User Credentials**: Username and password
 - **Network Access**: Network connectivity to Snowflake
@@ -19,37 +20,26 @@ Before configuring Snowflake as a destination, ensure you have:
 | Parameter   | Description                  | Required | Example             |
 | ----------- | ---------------------------- | -------- | ------------------- |
 | `account`   | Snowflake account identifier | Yes      | `xy12345.us-east-1` |
+| `database`   | Snowflake database name | Yes      | `pontoon` |
 | `warehouse` | Snowflake warehouse name     | Yes      | `PONTOON_WH`        |
 | `user`      | Snowflake username           | Yes      | `PONTOON_USER`      |
-| `password`  | Snowflake password           | Yes      | `your_password`     |
+| `access_token`  | Snowflake access token           | Yes      | `af877f76...`     |
 
 ## Setup Instructions
 
 ### Step 1: Create Snowflake Resources
 
-#### Create Warehouse
-
-```sql
--- Create a warehouse for Pontoon
-CREATE WAREHOUSE PONTOON_WH
-  WAREHOUSE_SIZE = 'X-SMALL'
-  AUTO_SUSPEND = 60
-  AUTO_RESUME = TRUE
-  MIN_CLUSTER_COUNT = 1
-  MAX_CLUSTER_COUNT = 1;
-```
-
 #### Create Database and Schema
 
 ```sql
--- Create database for customer data
-CREATE DATABASE CUSTOMER_DATA;
+-- Optionally, create database for customer data
+CREATE DATABASE PONTOON;
 
 -- Use the database
-USE DATABASE CUSTOMER_DATA;
+USE DATABASE PONTOON;
 
 -- Create schema for raw data
-CREATE SCHEMA RAW_DATA;
+CREATE SCHEMA PONTOON_DATA;
 ```
 
 #### Create User and Role
@@ -62,25 +52,19 @@ CREATE ROLE PONTOON_ROLE;
 CREATE USER PONTOON_USER
   PASSWORD = 'your_secure_password'
   DEFAULT_ROLE = PONTOON_ROLE
-  DEFAULT_WAREHOUSE = PONTOON_WH;
-
--- Grant warehouse usage
-GRANT USAGE ON WAREHOUSE PONTOON_WH TO ROLE PONTOON_ROLE;
+  DEFAULT_WAREHOUSE = <YOUR_WAREHOUSE>;
 
 -- Grant database and schema permissions
-GRANT USAGE ON DATABASE CUSTOMER_DATA TO ROLE PONTOON_ROLE;
-GRANT USAGE ON SCHEMA CUSTOMER_DATA.RAW_DATA TO ROLE PONTOON_ROLE;
-
--- Grant table creation permissions
-GRANT CREATE TABLE ON SCHEMA CUSTOMER_DATA.RAW_DATA TO ROLE PONTOON_ROLE;
-
--- Grant data loading permissions
-GRANT INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA CUSTOMER_DATA.RAW_DATA TO ROLE PONTOON_ROLE;
-GRANT INSERT, UPDATE, DELETE ON FUTURE TABLES IN SCHEMA CUSTOMER_DATA.RAW_DATA TO ROLE PONTOON_ROLE;
+GRANT USAGE ON DATABASE PONTOON TO ROLE PONTOON_ROLE;
+GRANT USAGE ON SCHEMA PONTOON.PONTOON_DATA TO ROLE PONTOON_ROLE;
+GRANT SELECT ON ALL TABLES IN SCHEMA PONTOON.PONTOON_DATA TO ROLE PONTOON_ROLE;
 
 -- Assign role to user
 GRANT ROLE PONTOON_ROLE TO USER PONTOON_USER;
 ```
+
+### Step 2: Configure access token
+Create a Snowflake [Access Token](https://docs.snowflake.com/en/user-guide/programmatic-access-tokens) (**Admin > Users & Roles > Programmatic access tokens**) for `PONTOON_USER` and ensure you have a Snowflake [Network Policy](https://docs.snowflake.com/en/user-guide/network-policies) in place that allows `PONTOON_USER` to access your Snowflake instance using the access token.
 
 ### Step 2: Configure Pontoon
 

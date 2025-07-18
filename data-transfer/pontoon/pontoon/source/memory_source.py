@@ -73,16 +73,16 @@ class MemorySource(Source):
 
         batch = [
             stream.to_record(r) for r in [
-                ['1', datetime.fromisoformat('2025-01-01T00:00:00+00:00'), datetime.fromisoformat('2025-01-01T00:00:00+00:00'), 'Customer5', 'User1', 'user1@example.com', 1, 'Notes for User1'],
-                ['2', datetime.fromisoformat('2025-01-01T00:00:00+00:00'), datetime.fromisoformat('2025-01-01T00:00:00+00:00'), 'Customer5', 'User2', 'user2@example.com', 1, 'Notes for User2'],
-                ['3', datetime.fromisoformat('2025-01-01T00:00:00+00:00'), datetime.fromisoformat('2025-01-01T00:00:00+00:00'), 'Customer5', 'User3', 'user3@example.com', 1, 'Notes for User3'],
-                ['4', datetime.fromisoformat('2025-01-01T00:00:00+00:00'), datetime.fromisoformat('2025-01-01T00:00:00+00:00'), 'Customer5', 'User4', 'user4@example.com', 1, 'Notes for User4'],
-                ['5', datetime.fromisoformat('2025-01-01T00:00:00+00:00'), datetime.fromisoformat('2025-01-01T00:00:00+00:00'), 'Customer5', 'User5', 'user5@example.com', 1, 'Notes for User5'],
-                ['6', datetime.fromisoformat('2025-01-02T00:00:00+00:00'), datetime.fromisoformat('2025-01-02T00:00:00+00:00'), 'Customer5', 'User6', 'user6@example.com', 1, 'Notes for User6'],
-                ['7', datetime.fromisoformat('2025-01-02T00:00:00+00:00'), datetime.fromisoformat('2025-01-02T00:00:00+00:00'), 'Customer5', 'User7', 'user7@example.com', 1, 'Notes for User7'],
-                ['8', datetime.fromisoformat('2025-01-02T00:00:00+00:00'), datetime.fromisoformat('2025-01-02T00:00:00+00:00'), 'Customer5', 'User8', 'user8@example.com', 1, 'Notes for User8'],
-                ['9', datetime.fromisoformat('2025-01-02T00:00:00+00:00'), datetime.fromisoformat('2025-01-02T00:00:00+00:00'), 'Customer5', 'User9', 'user9@example.com', 1, 'Notes for User9'],
-                ['10', datetime.fromisoformat('2025-01-02T00:00:00+00:00'), datetime.fromisoformat('2025-01-02T00:00:00+00:00'), 'Customer5', 'User10', 'user10@example.com', 1, 'Notes for User10']
+                ['a', datetime.fromisoformat('2025-01-01T00:00:00+00:00'), datetime.fromisoformat('2025-01-01T00:00:00+00:00'), 'Customer5', 'User1', 'user1@example.com', 1, 'Notes for User1'],
+                ['b', datetime.fromisoformat('2025-01-01T00:00:00+00:00'), datetime.fromisoformat('2025-01-01T00:00:00+00:00'), 'Customer5', 'User2', 'user2@example.com', 1, 'Notes for User2'],
+                ['c', datetime.fromisoformat('2025-01-01T00:00:00+00:00'), datetime.fromisoformat('2025-01-01T00:00:00+00:00'), 'Customer5', 'User3', 'user3@example.com', 1, 'Notes for User3'],
+                ['d', datetime.fromisoformat('2025-01-01T00:00:00+00:00'), datetime.fromisoformat('2025-01-01T00:00:00+00:00'), 'Customer5', 'User4', 'user4@example.com', 1, 'Notes for User4'],
+                ['e', datetime.fromisoformat('2025-01-01T00:00:00+00:00'), datetime.fromisoformat('2025-01-01T00:00:00+00:00'), 'Customer5', 'User5', 'user5@example.com', 1, 'Notes for User5'],
+                ['f', datetime.fromisoformat('2025-01-02T00:00:00+00:00'), datetime.fromisoformat('2025-01-02T00:00:00+00:00'), 'Customer5', 'User6', 'user6@example.com', 1, 'Notes for User6'],
+                ['g', datetime.fromisoformat('2025-01-02T00:00:00+00:00'), datetime.fromisoformat('2025-01-02T00:00:00+00:00'), 'Customer5', 'User7', 'user7@example.com', 1, 'Notes for User7'],
+                ['h', datetime.fromisoformat('2025-01-02T00:00:00+00:00'), datetime.fromisoformat('2025-01-02T00:00:00+00:00'), 'Customer5', 'User8', 'user8@example.com', 1, 'Notes for User8'],
+                ['i', datetime.fromisoformat('2025-01-02T00:00:00+00:00'), datetime.fromisoformat('2025-01-02T00:00:00+00:00'), 'Customer5', 'User9', 'user9@example.com', 1, 'Notes for User9'],
+                ['j', datetime.fromisoformat('2025-01-02T00:00:00+00:00'), datetime.fromisoformat('2025-01-02T00:00:00+00:00'), 'Customer5', 'User10', 'user10@example.com', 1, 'Notes for User10']
             ]
         ]
 

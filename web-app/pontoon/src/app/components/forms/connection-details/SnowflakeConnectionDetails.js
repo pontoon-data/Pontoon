@@ -26,6 +26,11 @@ export const SnowflakeConnectionDetails = ({ isDestination }) => {
         name="snowflake.warehouse"
         placeholder="primary"
       />
+      <FormTextInput
+        label="Database"
+        name="snowflake.database"
+        placeholder="primary"
+      />
       {isDestination === true ? (
         <FormTextInput
           label="Destination Schema"
@@ -39,10 +44,10 @@ export const SnowflakeConnectionDetails = ({ isDestination }) => {
         placeholder="data-transfer-user"
       />
       <FormTextInput
-        label="Password"
-        name="snowflake.password"
+        label="Access Token"
+        name="snowflake.access_token"
         type="password"
-        autoComplete="current-password"
+        autoComplete="access-token"
         placeholder="************"
       />
     </>
@@ -53,8 +58,9 @@ export const getSnowflakeValidation = (isDestination) => {
   let schema = Yup.object().shape({
     account: Yup.string().required("Required"),
     warehouse: Yup.string().required("Required"),
+    database: Yup.string().required("Required"),
     user: Yup.string().required("Required"),
-    password: Yup.string().required("Required"),
+    access_token: Yup.string().required("Required"),
   });
 
   if (isDestination) {
@@ -71,8 +77,9 @@ export const getSnowflakeInitialValues = (isDestination) => {
   const initialVals = {
     account: "",
     warehouse: "",
+    database: "",
     user: "",
-    password: "",
+    access_token: "",
   };
   if (isDestination) {
     return {

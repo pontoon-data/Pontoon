@@ -14,7 +14,11 @@ Before configuring Redshift as a destination, ensure you have:
 - **User Credentials**: Database username and password
 - **Network Access**: VPC connectivity or public access
 - **S3 Bucket**: S3 bucket for staging data during transfer
-- **IAM Role**: IAM role with permissions to access S3 and Redshift
+- **IAM Role**: IAM role associated with Redshift cluster with permissions to load data from the S3 bucket
+
+## How it works
+
+The Redshift destination connector will perform the required DDL operations to replicate tables, transfer data by writing to an S3 location associated with the destination Redshift cluster, and run a `COPY` command to load the data.
 
 ## Configuration
 
@@ -44,55 +48,38 @@ Before configuring Redshift as a destination, ensure you have:
 CREATE USER pontoon_user PASSWORD 'your_secure_password';
 
 -- Create schema
-CREATE SCHEMA export;
+CREATE SCHEMA raw_data;
 
 -- Grant permissions
-GRANT USAGE ON SCHEMA export TO pontoon_user;
-GRANT CREATE ON SCHEMA export TO pontoon_user;
-GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA export TO pontoon_user;
-GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA export TO pontoon_user;
+GRANT USAGE ON SCHEMA raw_data TO pontoon_user;
+GRANT CREATE ON SCHEMA raw_data TO pontoon_user;
+GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA raw_data TO pontoon_user;
 ```
 
 ### Step 2: Configure AWS Resources
 
-1. **Create S3 Bucket**: Create an S3 bucket for staging data during transfers
+**Create S3 Bucket**: Create an S3 bucket for staging data during transfers
 
    ```bash
-   aws s3 mb s3://my-pontoon-bucket --region us-east-1
+   aws s3 mb s3://your-pontoon-bucket --region us-east-1
    ```
 
-2. **Create IAM Role**: Create an IAM role with the following permissions:
-
-   - S3 read/write access to your bucket
-   - Redshift access for COPY commands
+**Create IAM Role**: Create an IAM role with the following permissions:
 
    ```json
    {
-     "Version": "2012-10-17",
-     "Statement": [
-       {
-         "Effect": "Allow",
-         "Action": [
-           "s3:GetObject",
-           "s3:PutObject",
-           "s3:DeleteObject",
-           "s3:ListBucket"
-         ],
-         "Resource": [
-           "arn:aws:s3:::my-pontoon-bucket",
-           "arn:aws:s3:::my-pontoon-bucket/*"
-         ]
-       }
-     ]
+      "Effect": "Allow",
+      "Action": [
+        "s3:GetObject"
+      ],
+      "Resource": "arn:aws:s3:::your-pontoon-bucket/*"
+    }
    }
    ```
+   - Attach this role to your Redshift cluster
 
-3. **Attach IAM Role to Redshift**: Associate the IAM role with your Redshift cluster
-   ```bash
-   aws redshift modify-cluster-iam-roles \
-     --cluster-identifier my-cluster \
-     --add-iam-roles arn:aws:iam::123456789012:role/RedshiftS3Role
-   ```
+**Create AWS Access Keys**: Create AWS access keys with permission to read and write to your S3 bucket. 
+
 
 ### Step 3: Configure Pontoon
 

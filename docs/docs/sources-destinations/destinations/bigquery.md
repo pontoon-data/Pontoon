@@ -24,7 +24,7 @@ Before configuring BigQuery as a destination, ensure you have:
 | `target_schema`   | Target schema name               | Yes      | `export`         |
 | `gcs_bucket`      | GCS bucket for staging data      | Yes      | `gs://mybucket`  |
 | `gcs_prefix`      | GCS bucket prefix for data files | Yes      | `/exports`       |
-| `service_account` | Service account credentials      | Yes      | JSON object      |
+| `service_account` | Service account credentials      | Yes      | JSON file      |
 
 ## Setup Instructions
 

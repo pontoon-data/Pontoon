@@ -13,7 +13,8 @@ def create_test_source():
                 "vendor_type": "snowflake",
                 "user": "admin",
                 "account": "abc123",
-                "password": "mypass",
+                "access_token": "token",
+                "database": "mydb",
                 "warehouse": "primary"
             }
     })
@@ -35,8 +36,9 @@ def test_create_source():
                 "vendor_type": "snowflake",
                 "user": "admin",
                 "account": "abc123",
-                "password": "mypass",
-                "warehouse": "primary"
+                "access_token": "token",
+                "warehouse": "primary",
+                "database": "mydb"
             }
     })
 
@@ -50,13 +52,14 @@ def test_create_source():
         "connection_info": {
                 "vendor_type": "snowflake",
                 "user": "admin",
+                "database": "mydb",
                 #"account": "abc123",
-                "password": "mypass",
+                "access_token": "token",
                 "warehouse": "primary"
             }
     })
 
-    # missing connection info field
+    # missing account info field
     assert r.status_code == 422
 
     r = client.post("/sources/", json={
@@ -67,8 +70,9 @@ def test_create_source():
                 "vendor_type": "snowflake",
                 "user": "admin",
                 "account": "abc123",
-                "password": "mypass",
-                "warehouse": "primary"
+                "access_token": "token",
+                "warehouse": "primary",
+                "database": "mydb"
             }
     })
 
@@ -97,8 +101,9 @@ def test_update_source():
                 "vendor_type": "snowflake",
                 "user": "admin2",           # update
                 "account": "abc123",
-                "password": "mynewpass",    # update
-                "warehouse": "primary"
+                "access_token": "mynewtoken",    # update
+                "warehouse": "primary",
+                "database": "mydb"
             }
     })
 
@@ -121,7 +126,7 @@ def test_update_source():
     assert o['state'] == 'CREATED'
     assert o['is_enabled'] == False
     assert o['connection_info']['user'] == 'admin2'
-    assert o['connection_info']['password'] == '****'
+    assert o['connection_info']['access_token'] == '****'
 
 
 def test_get_source():
@@ -148,7 +153,7 @@ def test_get_source():
     assert o['state'] == 'DRAFT'
     assert o['is_enabled'] == True
     assert o['connection_info']['user'] == 'admin'
-    assert o['connection_info']['password'] == '****'
+    assert o['connection_info']['access_token'] == '****'
     assert o['connection_info']['warehouse'] == 'primary'
 
 
