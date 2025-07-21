@@ -21,22 +21,17 @@ export const BigQueryConnectionDetails = ({ isDestination }) => {
         name="bigquery.project_id"
         placeholder="my-project-12345"
       />
-      <FormTextInput
-        label="Dataset"
-        name="bigquery.dataset"
-        placeholder="my-dataset"
-      />
       {isDestination === true ? (
         <>
           <FormTextInput
             label="GCS Bucket"
-            name="bigquery.gcs_bucket"
+            name="bigquery.gcs_bucket_name"
             placeholder="gs://mybucket"
           />
 
           <FormTextInput
             label="GCS Bucket Prefix"
-            name="bigquery.gcs_prefix"
+            name="bigquery.gcs_bucket_path"
             placeholder="/exports"
           />
 
@@ -62,15 +57,14 @@ export const BigQueryConnectionDetails = ({ isDestination }) => {
 export const getBigQueryValidation = (isDestination) => {
   let schema = Yup.object().shape({
     project_id: Yup.string().required("Required"),
-    dataset: Yup.string().required("Required"),
     service_account: Yup.string().required("Required"),
   });
 
   if (isDestination) {
     const destinationSchema = schema.shape({
       target_schema: Yup.string().required("Required"),
-      gcs_bucket: Yup.string().required("Required"),
-      gcs_prefix: Yup.string().required("Required"),
+      gcs_bucket_name: Yup.string().required("Required"),
+      gcs_bucket_path: Yup.string().required("Required"),
     });
     schema = schema.concat(destinationSchema);
   }
@@ -80,15 +74,14 @@ export const getBigQueryValidation = (isDestination) => {
 export const getBigQueryInitialValues = (isDestination) => {
   const initialVals = {
     project_id: "",
-    dataset: "",
     service_account: "",
   };
   if (isDestination) {
     return {
       ...initialVals,
       target_schema: "",
-      gcs_bucket: "",
-      gcs_prefix: "",
+      gcs_bucket_name: "",
+      gcs_bucket_path: "",
     };
   }
   return initialVals;

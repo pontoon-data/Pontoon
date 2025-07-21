@@ -20,8 +20,9 @@ def create_test_destination(recipient_id, model_ids):
                 "vendor_type": "snowflake",
                 "user": "admin",
                 "account": "abc123",
-                "password": "mypass",
+                "access_token": "token",
                 "warehouse": "primary",
+                "database": "mydb",
                 "target_schema": "export"
             }
     })
@@ -51,8 +52,9 @@ def test_create_destination():
                 "vendor_type": "snowflake",
                 "user": "admin",
                 "account": "abc123",
-                "password": "mypass",
+                "access_token": "token",
                 "warehouse": "primary",
+                "database": "mydb",
                 "target_schema": "export"
             }
     })
@@ -70,8 +72,9 @@ def test_create_destination():
                 "vendor_type": "snowflake",
                 "user": "admin",
                 "account": "abc123",
-                "password": "mypass",
+                "access_token": "token",
                 "warehouse": "primary",
+                "database": "mydb",
                 "target_schema": "export"
             }
     })
@@ -100,8 +103,9 @@ def test_create_destination():
                 "vendor_type": "snowflake",
                 "user": "admin",
                 "account": "abc123",
-                "password": "mypass",
+                "access_token": "token",
                 "warehouse": "primary",
+                "database": "mydb",
                 "target_schema": "export"
             }
     })
@@ -137,8 +141,9 @@ def test_update_destination():
                 "vendor_type": "snowflake",
                 "user": "admin2",               # update
                 "account": "abc123",
-                "password": "mynewpass",        # update
+                "access_token": "mynewtoken",        # update
                 "warehouse": "primary",
+                "database": "mydb",
                 "target_schema": "export"
             }
     })
@@ -167,7 +172,7 @@ def test_update_destination():
     assert o['is_enabled'] == True
     assert o['primary_transfer_id'] != None
     assert o['connection_info']['user'] == 'admin2'
-    assert o['connection_info']['password'] == '****'
+    assert o['connection_info']['access_token'] == '****'
 
     # change schedule and disable (will update Transfer schedule and disable it)
     r = client.put(f"/destinations/{destination_id}", json={
@@ -245,7 +250,7 @@ def test_get_destination():
     assert o['recipient_id'] == recipient_id
     assert o['state'] == 'DRAFT'
     assert o['connection_info']['user'] == 'admin'
-    assert o['connection_info']['password'] == '****'
+    assert o['connection_info']['access_token'] == '****'
 
 
 def test_delete_destination():

@@ -1,7 +1,9 @@
+import json
 from typing import List, Dict, Tuple, Generator, Any
 from sqlalchemy import create_engine, text
 
 from pontoon.base import Destination, Dataset, Stream, Record, Progress, Mode
+from pontoon.source.sql_source import SQLUtil
 from pontoon.destination.sql_destination import SQLDestination
 from pontoon.destination.gcs_destination import GCSDestination, GCSConfig
 
@@ -12,25 +14,26 @@ class BigQuerySQLUtil:
 
     @staticmethod
     def load_from_gcs(table_name:str, gcs_uri:str) -> str:
-        return f"LOAD DATA OVERWRITE {table_name} "\
+        return f"LOAD DATA OVERWRITE {SQLUtil.safe_identifier(table_name)} "\
                f"FROM FILES ("\
                f"format = 'PARQUET',"\
                f"uris = ['{gcs_uri}*.parquet']);"
 
     @staticmethod
     def create_table_if_not_exists(source_table_name:str, new_table_name:str) -> str:
-        return f"CREATE TABLE IF NOT EXISTS {new_table_name} AS SELECT * FROM {source_table_name} WHERE 1=0"
+        return f"CREATE TABLE IF NOT EXISTS {SQLUtil.safe_identifier(new_table_name)} AS SELECT * FROM {SQLUtil.safe_identifier(source_table_name)} WHERE 1=0"
     
 
     @staticmethod
     def merge(target_table_name:str, stage_table_name:str, cols:List[str], primary_key:str) -> str:
-        cols_str = ','.join(cols)
-        cols_stage_str = ','.join([f"stage.{col}" for col in cols])
-        update_set_str = ','.join([f"target.{col}=stage.{col}" for col in cols if col != primary_key])
+        s = SQLUtil.safe_identifier
+        cols_str = ','.join([s(col) for col in cols])
+        cols_stage_str = ','.join([f"stage.{s(col)}" for col in cols])
+        update_set_str = ','.join([f"target.{s(col)}=stage.{s(col)}" for col in cols if col != primary_key])
 
-        merge_sql = f"MERGE INTO {target_table_name} AS target "\
-                    f"USING {stage_table_name} AS stage "\
-                    f"ON target.{primary_key} = stage.{primary_key} "\
+        merge_sql = f"MERGE INTO {s(target_table_name)} AS target "\
+                    f"USING {s(stage_table_name)} AS stage "\
+                    f"ON target.{s(primary_key)} = stage.{s(primary_key)} "\
                     f"WHEN MATCHED THEN "\
                     f"UPDATE SET {update_set_str} "\
                     f"WHEN NOT MATCHED THEN "\
@@ -55,7 +58,10 @@ class BigQueryDestination(SQLDestination):
         # big query connection
         auth_type = connect.get('auth_type')
         if auth_type == 'service_account':       
-            self._engine = create_engine('bigquery://', credentials_info=connect['service_account'])
+            self._engine = create_engine(
+                f"bigquery://{connect['project_id']}", 
+                credentials_info=json.loads(connect['service_account'])
+            )
         else:
             raise Exception(f"BigQuery (destination-bigquery) does not support auth type '{auth_type}'")
 

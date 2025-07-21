@@ -34,11 +34,15 @@ class RedshiftS3ConnectionInfo(ConnectionInfo):
 
 class SnowflakeSMSConnectionInfo(ConnectionInfo):
     vendor_type: Literal["snowflake"]
-    auth_type: str = "basic"
+    auth_type: str = "access_token"
+    stage_name: str = "PONTOON"
+    create_stage: bool = True
+    delete_stage: bool = True
     user: str
-    password: str
+    access_token: str
     account: str
     warehouse: str
+    database: str
     target_schema: str
 
 
@@ -46,10 +50,9 @@ class BigQueryGCSServiceAccountConnectionInfo(ConnectionInfo):
     vendor_type: Literal["bigquery"]
     auth_type: str = "service_account"
     project_id: str
-    dataset: str
     target_schema: str
-    gcs_bucket: str
-    gcs_prefix: str
+    gcs_bucket_name: str
+    gcs_bucket_path: str
     service_account: str # JSON blob
 
 

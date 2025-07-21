@@ -4,12 +4,12 @@ Configure [Google BigQuery](https://cloud.google.com/bigquery) as a source for y
 
 ## Prerequisites
 
-Before configuring BigQuery as a destination, ensure you have:
+Before configuring BigQuery as a source, ensure you have:
 
 - **Google Cloud Project**: Active GCP project with BigQuery enabled
 - **Service Account**: Service account with appropriate BigQuery permissions
-- **Dataset**: Target dataset for storing data
-- **Credentials**: Service account key file or workload identity
+- **Dataset**: Dataset for storing data
+- **Credentials**: Service account JSON key file 
 - **Network Access**: Network connectivity to BigQuery (VPC connector or public internet)
 
 ## Configuration
@@ -20,61 +20,23 @@ Before configuring BigQuery as a destination, ensure you have:
 | ------------- | --------------------------- | -------- | ---------------- |
 | `project_id`  | Google Cloud project ID     | Yes      | `my-project-123` |
 | `dataset`     | BigQuery dataset ID         | Yes      | `customer_data`  |
-| `credentials` | Service account credentials | Yes      | JSON object      |
+| `credentials` | Service account credentials | Yes      | JSON file      |
 
 ## Setup Instructions
 
 ### Step 1: Create BigQuery Resources
 
-#### Create Dataset
-
 ```bash
-# Create dataset
-bq mk --location=US my-project-123:customer_data
+gcloud init # authenticate with a BigQuery admin role
+bq mk --dataset --description "Pontoon Data" --location=US my-project-123:pontoon_data
 ```
 
-#### Create Service Account
+### Step 2: Create a service account 
 
-```bash
-# Create service account
-gcloud iam service-accounts create pontoon-sa \
-  --display-name="Pontoon Service Account" \
-  --project=my-project-123
+Create a service account with the `BigQuery Data Viewer` and `BigQuery Metadata Viewer` IAM roles attached and download the `service-account.json` key file.
 
-# Get service account email
-SA_EMAIL=$(gcloud iam service-accounts list \
-  --filter="displayName:Pontoon Service Account" \
-  --format="value(email)")
-```
 
-#### Assign BigQuery Permissions
-
-```bash
-# Grant BigQuery Data Editor role
-gcloud projects add-iam-policy-binding my-project-123 \
-  --member="serviceAccount:$SA_EMAIL" \
-  --role="roles/bigquery.dataEditor"
-
-# Grant BigQuery Job User role
-gcloud projects add-iam-policy-binding my-project-123 \
-  --member="serviceAccount:$SA_EMAIL" \
-  --role="roles/bigquery.jobUser"
-
-# Grant BigQuery User role
-gcloud projects add-iam-policy-binding my-project-123 \
-  --member="serviceAccount:$SA_EMAIL" \
-  --role="roles/bigquery.user"
-```
-
-#### Create Service Account Key
-
-```bash
-# Create and download service account key
-gcloud iam service-accounts keys create pontoon-sa-key.json \
-  --iam-account=$SA_EMAIL
-```
-
-### Step 2: Configure Pontoon
+### Step 3: Configure Pontoon
 
 1. Navigate to **Sources** → **New Source**
 2. Select **BigQuery** as the source type

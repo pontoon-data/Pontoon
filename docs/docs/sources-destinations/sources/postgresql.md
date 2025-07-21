@@ -37,18 +37,15 @@ CREATE DATABASE analytics;
 CREATE USER pontoon_user WITH PASSWORD 'your_secure_password';
 
 -- Create schema
-CREATE SCHEMA raw_data;
+CREATE SCHEMA pontoon_data;
 
 -- Grant permissions
 GRANT CONNECT ON DATABASE analytics TO pontoon_user;
-GRANT USAGE ON SCHEMA raw_data TO pontoon_user;
-GRANT CREATE ON SCHEMA raw_data TO pontoon_user;
-GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA raw_data TO pontoon_user;
-GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA raw_data TO pontoon_user;
+GRANT USAGE ON SCHEMA pontoon_data TO pontoon_user;
+GRANT SELECT ON ALL TABLES IN SCHEMA pontoon_data TO pontoon_user;
 
--- Grant future permissions
-ALTER DEFAULT PRIVILEGES IN SCHEMA raw_data GRANT ALL ON TABLES TO pontoon_user;
-ALTER DEFAULT PRIVILEGES IN SCHEMA raw_data GRANT ALL ON SEQUENCES TO pontoon_user;
+-- Optionally, grant future permissions
+ALTER DEFAULT PRIVILEGES IN SCHEMA pontoon_data GRANT SELECT ON TABLES TO pontoon_user;
 ```
 
 ### Step 2: Configure Pontoon

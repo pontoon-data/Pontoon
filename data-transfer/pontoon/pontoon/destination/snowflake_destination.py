@@ -1,7 +1,8 @@
 from typing import List, Dict, Tuple, Generator, Any
-from sqlalchemy import text
+from sqlalchemy import create_engine, text
 
 from pontoon.base import Destination, Dataset, Stream, Record, Progress, Mode
+from pontoon.source.sql_source import SQLUtil
 from pontoon.destination.sql_destination import SQLDestination
 
 
@@ -9,25 +10,26 @@ class SnowflakeSQLUtil:
 
     @staticmethod
     def create_temp_table(temp_table_name:str, source_table_name:str) -> str:
-        return f"CREATE TEMPORARY TABLE {temp_table_name} LIKE {source_table_name}"
+        return f"CREATE TEMPORARY TABLE {SQLUtil.safe_identifier(temp_table_name)} LIKE {SQLUtil.safe_identifier(source_table_name)}"
 
     @staticmethod
     def copy_into_table(target_table_name:str, stage_name:str, pattern:str) -> str:
-        return f"COPY INTO {target_table_name} "\
-               f"FROM @{stage_name} "\
+        return f"COPY INTO {SQLUtil.safe_identifier(target_table_name)} "\
+               f"FROM @{SQLUtil.safe_identifier(stage_name)} "\
                f"FILE_FORMAT = (TYPE = PARQUET) "\
                f"MATCH_BY_COLUMN_NAME = CASE_INSENSITIVE "\
                f"PATTERN = '{pattern}'"
 
     @staticmethod
     def merge(target_table_name:str, stage_table_name:str, cols:List[str], primary_key:str) -> str:
-        cols_str = ','.join(cols)
-        cols_stage_str = ','.join([f"stage.{col}" for col in cols])
-        update_set_str = ','.join([f"target.{col}=stage.{col}" for col in cols if col != primary_key])
+        s = SQLUtil.safe_identifier
+        cols_str = ','.join([s(col) for col in cols])
+        cols_stage_str = ','.join([f"stage.{s(col)}" for col in cols])
+        update_set_str = ','.join([f"target.{s(col)}=stage.{s(col)}" for col in cols if col != primary_key])
 
-        merge_sql = f"MERGE INTO {target_table_name} AS target "\
-                    f"USING {stage_table_name} AS stage "\
-                    f"ON target.{primary_key} = stage.{primary_key} "\
+        merge_sql = f"MERGE INTO {s(target_table_name)} AS target "\
+                    f"USING {s(stage_table_name)} AS stage "\
+                    f"ON target.{s(primary_key)} = stage.{s(primary_key)} "\
                     f"WHEN MATCHED THEN "\
                     f"UPDATE SET {update_set_str} "\
                     f"WHEN NOT MATCHED THEN "\
@@ -48,7 +50,16 @@ class SnowflakeDestination(SQLDestination):
 
         connect = config.get('connect')
         self._stage_name = connect.get('stage_name')
-        self._delete_stage = connect('delete_stage', False)
+        self._delete_stage = connect.get('delete_stage', False)
+
+        auth_type = connect.get('auth_type')
+        if auth_type == 'access_token':
+            self._engine = create_engine(
+                f"snowflake://{connect['user']}:{connect['access_token']}@"\
+                f"{connect['account']}/{connect['database']}/{connect['target_schema']}?warehouse={connect['warehouse']}"
+            )
+        else:
+            raise Exception(f"Snowflake (destination-snowflake) does not support auth type '{auth_type}'")
 
     
     def write(self, ds:Dataset, progress_callback = None):

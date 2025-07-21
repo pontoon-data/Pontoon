@@ -33,13 +33,11 @@ Before configuring Redshift as a destination, ensure you have:
 CREATE USER pontoon_user PASSWORD 'your_secure_password';
 
 -- Create schema
-CREATE SCHEMA raw_data;
+CREATE SCHEMA pontoon_data;
 
 -- Grant permissions
-GRANT USAGE ON SCHEMA raw_data TO pontoon_user;
-GRANT CREATE ON SCHEMA raw_data TO pontoon_user;
-GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA raw_data TO pontoon_user;
-GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA raw_data TO pontoon_user;
+GRANT USAGE ON SCHEMA pontoon_data TO pontoon_user;
+GRANT SELECT ON SCHEMA pontoon_data TO pontoon_user;
 ```
 
 ### Step 2: Configure Pontoon

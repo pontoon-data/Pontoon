@@ -1,4 +1,5 @@
 import json
+import re
 from typing import List, Dict, Tuple, Generator, Any
 from datetime import datetime, timezone, date
 from decimal import Decimal
@@ -29,17 +30,44 @@ class SQLUtil:
 
 
     @staticmethod
-    def build_select_query(stream:Stream, mode:Mode) -> str:
-        # note on sql injection / validation:
-        #     - all of the schema, table and column names used here are validated against the db already
-        #     - column values are sanitized 
+    def safe_identifier(name: str, default=None):
+        # Sanitize a name to be a safe SQL identifier (e.g., table name, schema name)
+        # Returns default if name is invalid, or throws ValueError
         
-        cols = ','.join(stream.schema.names)
+        parts = name.split(".")
+        safe_parts = []
+        for part in parts:
+            # keep letters, numbers, underscores
+            cleaned = re.sub(r'\W+', '_', part)
+            
+            # remove leading digits (so identifier doesn't start with number)
+            cleaned = re.sub(r'^[0-9]+', '', cleaned)
+
+            # truncate to typical max identifier length
+            cleaned = cleaned[:64]
+
+            # fallback if name becomes empty or invalid
+            if not cleaned or not re.match(r'^[A-Za-z_]', cleaned):
+                if default is not None:
+                    cleaned = default
+                else:
+                    raise ValueError(f"Invalid SQL identifier: {name}")
+            
+            safe_parts.append(cleaned)
+
+        return ".".join(safe_parts)
+
+
+    @staticmethod
+    def build_select_query(stream:Stream, mode:Mode) -> str:
+        
+        # shorthand pointers
+        e = SQLUtil.to_sql_value
+        s = SQLUtil.safe_identifier
+
+        cols = ','.join([s(col) for col in stream.schema.names])
         filters = []
         where_clause = ''
-
-        # shorthand pointer
-        e = SQLUtil.to_sql_value
 
         if mode.type == Mode.INCREMENTAL:
             filters.append({'col': stream.cursor_field, 'op': '>=', 'value': e(mode.start)})
@@ -50,10 +78,10 @@ class SQLUtil:
                 filters.append({'col': col, 'op': '=', 'value': e(v)})
 
         if filters:
-            serial = [f"{f['col']} {f['op']} {f['value']}" for f in filters]
+            serial = [f"{s(f['col'])} {f['op']} {f['value']}" for f in filters]
             where_clause = f" WHERE {' AND '.join(serial)}"
 
-        select_query = f"SELECT {cols} FROM {stream.schema_name}.{stream.name}{where_clause}"
+        select_query = f"SELECT {cols} FROM {s(stream.schema_name)}.{s(stream.name)}{where_clause}"
 
         return select_query
 
@@ -116,10 +144,10 @@ class SQLSource(Source):
                     arraysize=self._chunk_size
                 )
             elif vendor_type == 'snowflake':
-                if auth_type != 'basic':
+                if auth_type != 'access_token':
                     raise Exception(f'SQLSource (source-sql) does not support auth_type {auth_type} for {vendor_type}')
                 self._engine = create_engine(
-                    f"snowflake://{connect['user']}:{connect['password']}@"\
+                    f"snowflake://{connect['user']}:{connect['access_token']}@"\
                     f"{connect['account']}/{connect['database']}?warehouse={connect['warehouse']}"
                 )
             else:
@@ -137,7 +165,7 @@ class SQLSource(Source):
 
 
 
-    def inspect_postgresql_streams(self):
+    def inspect_standard_streams(self):
         ignore_schemas = ['information_schema','pg_catalog','sys','sqlite_master']
 
         streams = []
@@ -193,15 +221,16 @@ class SQLSource(Source):
         return streams
 
 
+
     def inspect_streams(self):
         # schema info reflection 
         vendor_type = self._config['connect']['vendor_type']
 
-        if vendor_type in ['postgresql', 'redshift']:
-            return self.inspect_postgresql_streams()
+        if vendor_type in ['postgresql', 'redshift', 'snowflake']:
+            return self.inspect_standard_streams()
         
         if vendor_type == 'bigquery':
-            return self.inspect_bigquery_streams()
+            return self.inspect_bigquery_streams()        
 
         return []
         
@@ -232,8 +261,14 @@ class SQLSource(Source):
                 if not table.exists(conn):
                     raise Exception(f"SQLSource (source-sql) table does not exist: {stream_config['schema']}.{table_name}")
 
-                columns = [(col.name, col.type.python_type) for col in table.columns]
-                
+                columns = []
+                for col in table.columns:
+                    try:
+                        # try to use the alchemy mapped python type if available
+                        columns.append((col.name, col.type.python_type))
+                    except NotImplementedError:
+                        columns.append((col.name, str(col.type)))
+
                 # create a schema from the column field + types
                 stream = Stream(
                     name=stream_config['table'],
@@ -259,7 +294,6 @@ class SQLSource(Source):
                 # ignore any stream fields?
                 if stream_config.get('drop_fields'):
                     for field in stream_config.get('drop_fields'):
-                        print(f'dropping field {field}')
                         stream.drop_field(field)
 
                 # add bookkeeping columns to stream if configured

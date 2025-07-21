@@ -22,6 +22,7 @@ Before configuring Snowflake as a destination, ensure you have:
 | ----------- | ---------------------------- | -------- | ------------------- |
 | `account`   | Snowflake account identifier | Yes      | `xy12345.us-east-1` |
 | `warehouse` | Snowflake warehouse name     | Yes      | `PONTOON_WH`        |
+| `database` | Snowflake database name     | Yes      | `PONTOON`        |
 | `schema`    | Target schema name           | Yes      | `EXPORT`            |
 | `user`      | Snowflake username           | Yes      | `PONTOON_USER`      |
 | `password`  | Snowflake password           | Yes      | `your_password`     |
