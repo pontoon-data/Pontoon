@@ -4,7 +4,7 @@ Deploy Pontoon using Docker Compose for production environments with full contro
 
 ## Prerequisites
 
-- **Docker** & **Docker Compose** ([Docker Desktop](https://docker.com))
+- **Docker** & **Docker Compose V2** ([Docker Desktop](https://docs.docker.com/compose/install/))
 
 ## Step 1: Clone the Repository
 

@@ -14,11 +14,12 @@ To get Pontoon up and running in minutes, we packaged Pontoon into a single Dock
 docker run \
     --name pontoon \
     -p 3000:3000 \
+    -p 8000:8000 \
     --rm \
     --pull=always \
     -v pontoon-internal-postgres:/var/lib/postgresql/data \
     -v pontoon-internal-redis:/data \
-    ghcr.io/pontoon-data/pontoon:latest
+    ghcr.io/pontoon-data/pontoon/pontoon-unified:latest
 ```
 
 ## Step 3: You're Ready! 🚀

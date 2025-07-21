@@ -11,8 +11,8 @@
 
 <div align="center">
     <div>
-        <a href="https://docs.getpontoon.com/"><strong>Docs</strong></a> ·
-        <a href="https://docs.getpontoon.com/getting-started/quick-start/"><strong>Quick Start</strong></a> ·
+        <a href="https://pontoon-data.github.io/Pontoon/"><strong>Docs</strong></a> ·
+        <a href="https://pontoon-data.github.io/Pontoon/getting-started/quick-start/"><strong>Quick Start</strong></a> ·
         <a href="https://github.com/pontoon-data/Pontoon/issues"><strong>Report Bug</strong></a> ·
         <a href="https://getpontoon.com/contact"><strong>Contact</strong></a> ·
     </div>
@@ -30,34 +30,70 @@
 
 # About
 
-Pontoon is an open source, self-hosted data export platform. Build data export features for your product without the hassle of moving data across cloud providers.
+Pontoon is an open source, self-hosted, data export platform. We built Pontoon from the ground up for the use case of shipping data products to your enterprise customers. APIs are painful to work with at modern data scale and Pontoon is built to make it easy to sync data directly to your customer's data warehouse. Your customers get their data, without needing to build ETLs or pay for ETL tools, empowering them to make data driven decisions for their business with data from your product. Welcome to the future of customer data syncs 🚀
 
-<div align="center" style="margin: 2em 0;">
+> Want to get Pontoon up and running in minutes? Try our [Quick Start Guide](https://pontoon-data.github.io/Pontoon/getting-started/quick-start/).
+
+<div align="center">
   <img src="assets/pontoon-destinations.png" alt="Pontoon Destinations" width="980" />
 </div>
 
 ## Key Features
 
-- **🚀 Easy Deployment**: [Get started](https://docs.getpontoon.com/getting-started/quick-start/) in minutes with Docker or deploy to AWS Fargate
+- **🚀 Easy Deployment**: [Get started](https://pontoon-data.github.io/Pontoon/getting-started/quick-start/) in minutes with Docker or deploy to [AWS Fargate](https://pontoon-data.github.io/Pontoon/getting-started/aws-fargate/)
 - **🎯 Major Data Warehouses Integrations**: Supports [Snowflake](https://www.snowflake.com/), [Google BigQuery](https://cloud.google.com/bigquery), [Amazon Redshift](https://aws.amazon.com/redshift/), and [Postgres](https://www.postgresql.org/) as sources and destinations
 - **☁️ Multi-cloud**: Send data from any cloud to any cloud. Amazon Redshift ➡️ Google BigQuery? No problem!
+- **🏗️ Built for Scale**: Sync over 1 million records per minutea
 - **⚡ Automated Syncs**: Schedule data transfers with automatic backfills and incremental loads
 - **✨ Web Interface**: User-friendly dashboard for managing syncs, built with React/Nextjs
 - **🔌 REST API**: Programmatic access to all Pontoon features, built with FastAPI
 
+# The Problem with APIs & Data
+
+### Data Export with APIs
+
+We built Pontoon because traditional APIs are becoming increasingly problematic at modern data scale:
+
+- **Performance Issues**: APIs struggle with large datasets and complex queries
+- **Poor Customer Experience**: Customers have to spend weeks building ETLs or pay for managed ETL tools ($$$)
+- **Rate Limits**: Data workloads tend to be bursty, often triggering rate limits, resulting in a frustrating experience for everyone involved
+- **Backfills**: Backfilling historical data through APIs is inherently slow, as most APIs are optimized for real-time, not bulk ingestion
+
+### Data Export with Pontoon
+
+Pontoon solves these problems with:
+
+- **Direct Warehouse Integration**: Send data directly to customer's data warehouse. No more ETLs needed!
+- **Scalable Architecture**: Handle millions of rows efficiently. Say goodbye to rate limits!
+- **Scheduled Syncs**: Automate data delivery with automatic backfills on the first sync
+- **Self-Hosted**: Full control over your data and infrastructure
+
+# Is Pontoon Just Another ETL Platform?
+
+Short Answer: **No.**
+
+ETL platforms are used by data teams to **pull data out** of vendors (eg. Salesforce). Data teams maintain/pay for the ETL platform.
+
+Pontoon is used by vendors (eg. Salesforce) to **provide data syncs** as a product feature for their customer's data team. The vendor deploys Pontoon.
+
+<div align="center">
+  <img src="assets/etl-vs-pontoon.png" alt="How Pontoon Works vs ETLs" width="980" />
+</div>
+
 # Quick Start
 
-Get Pontoon running in seconds with our official docker image. Visit our [docs](https://docs.getpontoon.com/getting-started/quick-start/) for more information.
+Get Pontoon running in seconds with our official docker image. Visit our [docs](https://pontoon-data.github.io/Pontoon/getting-started/quick-start/) for more information.
 
 ```sh
 docker run \
     --name pontoon \
     -p 3000:3000 \
+    -p 8000:8000 \
     --rm \
     --pull=always \
     -v pontoon-internal-postgres:/var/lib/postgresql/data \
     -v pontoon-internal-redis:/data \
-    ghcr.io/pontoon-data/pontoon:latest
+    ghcr.io/pontoon-data/pontoon/pontoon-unified:latest
 ```
 
 To view the Web UI: `localhost:3000`. To view the OpenAPI docs / test the API: `localhost:8000/docs`
