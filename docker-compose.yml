@@ -3,7 +3,7 @@ name: pontoon
 
 services:
   frontend:
-    image: pontoon-frontend:${IMAGE_VERSION}
+    image: ${REGISTRY}/pontoon-frontend:${IMAGE_VERSION}
     build:
       context: ./web-app/pontoon
       dockerfile: Dockerfile
@@ -18,7 +18,7 @@ services:
       - api
 
   api:
-    image: pontoon-api:${IMAGE_VERSION}
+    image: ${REGISTRY}/pontoon-api:${IMAGE_VERSION}
     build:
       context: .
       dockerfile: api/Dockerfile
@@ -65,7 +65,7 @@ services:
       - app-network
   
   worker:
-    image: pontoon-worker:${IMAGE_VERSION}
+    image: ${REGISTRY}/pontoon-worker:${IMAGE_VERSION}
     build:
       context: data-transfer/pontoon
       dockerfile: Dockerfile
@@ -80,7 +80,7 @@ services:
       - redis
 
   beat:
-    image: pontoon-beat:${IMAGE_VERSION}
+    image: ${REGISTRY}/pontoon-beat:${IMAGE_VERSION}
     build:
       context: data-transfer/pontoon
       dockerfile: Dockerfile

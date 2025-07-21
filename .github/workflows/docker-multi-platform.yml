@@ -1,0 +1,206 @@
+name: Build and Push Multi-Platform Docker Images
+
+on:
+  push:
+    branches:
+      - master
+    tags:
+      - "v*.*.*"
+
+env:
+  REGISTRY: ghcr.io/pontoon-data/pontoon
+  IMAGE_VERSION: ${{ github.ref_name }}
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      packages: write
+    strategy:
+      fail-fast: false
+      matrix:
+        platform:
+          - linux/amd64
+          - linux/arm64
+    steps:
+      - name: Prepare
+        run: |
+          platform=${{ matrix.platform }}
+          echo "PLATFORM_PAIR=${platform//\//-}" >> $GITHUB_ENV
+
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Docker meta
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: |
+            ${{ env.REGISTRY }}/pontoon-api
+            ${{ env.REGISTRY }}/pontoon-frontend
+            ${{ env.REGISTRY }}/pontoon-worker
+            ${{ env.REGISTRY }}/pontoon-beat
+            ${{ env.REGISTRY }}/pontoon-unified
+          tags: |
+            type=ref,event=branch
+            type=ref,event=tag
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+
+      # Build and push frontend
+      - name: Build and push frontend
+        id: build-frontend
+        uses: docker/build-push-action@v6
+        with:
+          context: ./web-app/pontoon
+          file: web-app/pontoon/Dockerfile
+          platforms: ${{ matrix.platform }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          outputs: type=image,name=${{ env.REGISTRY }}/pontoon-frontend,push-by-digest=true,name-canonical=true,push=true
+
+      # Build and push api
+      - name: Build and push api
+        id: build-api
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: api/Dockerfile
+          platforms: ${{ matrix.platform }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          outputs: type=image,name=${{ env.REGISTRY }}/pontoon-api,push-by-digest=true,name-canonical=true,push=true
+
+      # Build and push worker
+      - name: Build and push worker
+        id: build-worker
+        uses: docker/build-push-action@v6
+        with:
+          context: data-transfer/pontoon
+          file: data-transfer/pontoon/Dockerfile
+          platforms: ${{ matrix.platform }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          outputs: type=image,name=${{ env.REGISTRY }}/pontoon-worker,push-by-digest=true,name-canonical=true,push=true
+
+      # Build and push beat
+      - name: Build and push beat
+        id: build-beat
+        uses: docker/build-push-action@v6
+        with:
+          context: data-transfer/pontoon
+          file: data-transfer/pontoon/Dockerfile
+          platforms: ${{ matrix.platform }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          outputs: type=image,name=${{ env.REGISTRY }}/pontoon-beat,push-by-digest=true,name-canonical=true,push=true
+
+      # Build and push unified image
+      - name: Build and push unified
+        id: build-unified
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: Dockerfile
+          platforms: ${{ matrix.platform }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          outputs: type=image,name=${{ env.REGISTRY }}/pontoon-unified,push-by-digest=true,name-canonical=true,push=true
+          build-args: |
+            API_IMAGE=${{ env.REGISTRY }}/pontoon-api@${{ steps.build-api.outputs.digest }}
+            FRONTEND_IMAGE=${{ env.REGISTRY }}/pontoon-frontend@${{ steps.build-frontend.outputs.digest }}
+
+      # Export digests
+      - name: Export digests
+        run: |
+          mkdir -p ${{ runner.temp }}/digests
+          echo "${{ steps.build-frontend.outputs.digest }}" > ${{ runner.temp }}/digests/frontend-${{ env.PLATFORM_PAIR }}.digest
+          echo "${{ steps.build-api.outputs.digest }}" > ${{ runner.temp }}/digests/api-${{ env.PLATFORM_PAIR }}.digest
+          echo "${{ steps.build-worker.outputs.digest }}" > ${{ runner.temp }}/digests/worker-${{ env.PLATFORM_PAIR }}.digest
+          echo "${{ steps.build-beat.outputs.digest }}" > ${{ runner.temp }}/digests/beat-${{ env.PLATFORM_PAIR }}.digest
+          echo "${{ steps.build-unified.outputs.digest }}" > ${{ runner.temp }}/digests/unified-${{ env.PLATFORM_PAIR }}.digest
+
+      - name: Upload digests
+        uses: actions/upload-artifact@v4
+        with:
+          name: digests-${{ env.PLATFORM_PAIR }}
+          path: ${{ runner.temp }}/digests/*
+          if-no-files-found: error
+          retention-days: 1
+
+  merge:
+    runs-on: ubuntu-latest
+    permissions:
+      packages: write
+    needs: build
+    strategy:
+      matrix:
+        component: [frontend, api, worker, beat, unified]
+    steps:
+      - name: Download digests
+        uses: actions/download-artifact@v4
+        with:
+          path: ${{ runner.temp }}/digests
+          pattern: digests-*
+          merge-multiple: true
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Docker meta
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: |
+            ${{ env.REGISTRY }}/pontoon-${{ matrix.component }}
+          tags: |
+            type=ref,event=branch
+            type=ref,event=tag
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+
+      - name: Create and Push Manifest
+        run: |
+          digests=""
+          for f in "${{ runner.temp }}/digests/${{ matrix.component }}-"*.digest; do
+            digest=$(cat "$f")
+            digests="$digests $digest"
+          done
+
+          echo "digests: $digests"
+
+          tags=$(jq -cr '.tags | map("-t " + .) | join(" ")' <<< "$DOCKER_METADATA_OUTPUT_JSON")
+          echo "tags: $tags"
+
+          docker buildx imagetools create \
+            $tags \
+            $digests
+
+      - name: Inspect image
+        run: |
+          docker buildx imagetools inspect ${{ env.REGISTRY }}/pontoon-${{ matrix.component }}:${{ steps.meta.outputs.version }}
