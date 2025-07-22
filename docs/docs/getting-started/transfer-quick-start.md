@@ -6,8 +6,6 @@ Here's how to quickly set up your first transfer in Pontoon. Follow these steps 
 
 A source defines a connection to a database that holds data you want to sync. For detailed configuration instructions for each source type, see our [Sources & Destinations documentation](../sources-destinations/overview.md).
 
-<!-- TODO: Add screenshot of adding a source form -->
-
 To add a source:
 
 1. Navigate to the Sources page in the Pontoon web interface
@@ -15,6 +13,8 @@ To add a source:
 3. Select your source type (Snowflake, Redshift, BigQuery, etc.)
 4. Configure the connection details for your data source
 5. Test the connection to ensure it's working properly
+
+![Add Source form](../assets/source-creation.png)
 
 ## Step 2: Adding a Model
 
@@ -30,6 +30,8 @@ When creating a model, you'll need to configure three critical fields:
 
 - **Tenant ID**: An identifier used to associate data with specific customers. This same tenant ID will be used when adding recipients, creating the link between your data and who receives it.
 
+![Add Model form](../assets/model-creation.png)
+
 ## Step 3: Adding a Recipient
 
 Recipients are the customers or organizations that will receive your data. Each recipient is associated with a specific tenant ID.
@@ -43,11 +45,11 @@ To add a recipient:
 3. Enter the recipient's details including their unique tenant ID
 4. Save the recipient configuration
 
+![Add Recipient form](../assets/recipient-creation.png)
+
 ## Step 4: Adding a Destination
 
 A destination defines where your data will be sent. This could be a data warehouse or another database.
-
-<!-- TODO: Add screenshot of adding a destination form -->
 
 For detailed configuration instructions for each destination type, see our [Sources & Destinations documentation](../sources-destinations/overview.md).
 
@@ -59,6 +61,8 @@ To add a destination:
 4. Add a recipient
 5. Configure the connection details
 6. Test the connection to ensure it's working properly
+
+![Add Destination form](../assets/destination-creation.png)
 
 ## Step 5: Begin a Transfer
 

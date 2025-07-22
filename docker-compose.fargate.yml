@@ -3,7 +3,7 @@ name: pontoon
 services:
 
   frontend:
-    image: ghcr.io/pontoon-data/pontoon-frontend:${IMAGE_VERSION}
+    image: ghcr.io/pontoon-data/pontoon/pontoon-frontend:${IMAGE_VERSION}
     ports:
       - "3000:3000"
     environment:
@@ -17,7 +17,7 @@ services:
         awslogs-stream-prefix: pontoon-frontend
 
   api:
-    image: ghcr.io/pontoon-data/pontoon-api:${IMAGE_VERSION}
+    image: ghcr.io/pontoon-data/pontoon/pontoon-api:${IMAGE_VERSION}
     ports:
       - "8000:8000"
     environment:
@@ -69,7 +69,7 @@ services:
         awslogs-stream-prefix: pontoon-postgres
   
   worker:
-    image: ghcr.io/pontoon-data/pontoon-worker:${IMAGE_VERSION}
+    image: ghcr.io/pontoon-data/pontoon/pontoon-worker:${IMAGE_VERSION}
     environment:
       CELERY_BROKER_URL: ${FARGATE_CELERY_BROKER_URL}
       CELERY_RESULT_BACKEND: ${FARGATE_CELERY_RESULT_BACKEND}
@@ -83,7 +83,7 @@ services:
         awslogs-stream-prefix: pontoon-worker
 
   beat:
-    image: ghcr.io/pontoon-data/pontoon-beat:${IMAGE_VERSION}
+    image: ghcr.io/pontoon-data/pontoon/pontoon-beat:${IMAGE_VERSION}
     environment:
       CELERY_BROKER_URL: ${FARGATE_CELERY_BROKER_URL}
       CELERY_RESULT_BACKEND: ${FARGATE_CELERY_RESULT_BACKEND}

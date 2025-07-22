@@ -1,7 +1,7 @@
 site_name: Pontoon
 site_description: The open source data export platform that helps data teams send data to their customers
 site_author: Pontoon Team
-site_url: https://getpontoon.com/
+site_url: https://pontoon-data.github.io/Pontoon/
 
 repo_name: pontoon-data/Pontoon
 repo_url: https://github.com/pontoon-data/Pontoon

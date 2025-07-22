@@ -14,15 +14,18 @@ To get Pontoon up and running in minutes, we packaged Pontoon into a single Dock
 docker run \
     --name pontoon \
     -p 3000:3000 \
+    -p 8000:8000 \
     --rm \
     --pull=always \
     -v pontoon-internal-postgres:/var/lib/postgresql/data \
     -v pontoon-internal-redis:/data \
-    ghcr.io/pontoon-data/pontoon:latest
+    ghcr.io/pontoon-data/pontoon/pontoon-unified:latest
 ```
 
 ## Step 3: You're Ready! 🚀
 
 Navigate to `http://localhost:3000` to start exploring Pontoon or checkout the API docs at `http://localhost:8000/docs`.
 
-To learn about adding a source, check out the [Sources & Destinations documentation](../sources-destinations/overview.md).
+The [Transfer Quick Start Guide](./transfer-quick-start.md) has the next steps for building your first data sync!
+
+To learn more about a specific source or destination, check out the [Sources & Destinations docs](../sources-destinations/overview.md).
