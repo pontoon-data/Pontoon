@@ -122,9 +122,9 @@ const AddDestination = () => {
       recipient_id: values.recipient_id,
       schedule: {
         type: "INCREMENTAL",
-        frequency: "DAILY",
-        day: 1,
-        hour: 0,
+        frequency: values.schedule_frequency,
+        day: values.schedule_day,
+        hour: values.schedule_hour,
         minute: 0,
       },
       models: values.selectedModels,
@@ -209,6 +209,9 @@ const AddDestination = () => {
             redshift: getRedshiftInitialValues(true),
             bigquery: getBigQueryInitialValues(true),
             postgresql: getPostgresInitialValues(true),
+            schedule_frequency: "DAILY",
+            schedule_day: 0,
+            schedule_hour: 0,
           }}
           enableReinitialize={true}
           validationSchema={Yup.object({
@@ -242,6 +245,19 @@ const AddDestination = () => {
                 ? getPostgresValidation(true).required("Required")
                 : Yup.mixed().notRequired()
             ),
+            schedule_frequency: Yup.string()
+              .oneOf(["DAILY", "WEEKLY", "HOURLY"])
+              .required("Required"),
+            schedule_day: Yup.number()
+              .integer()
+              .min(0)
+              .max(6)
+              .required("Required"),
+            schedule_hour: Yup.number()
+              .integer()
+              .min(0)
+              .max(23)
+              .required("Required"),
           })}
           onSubmit={handleEnableDestination}
         >
@@ -332,7 +348,11 @@ const AddDestination = () => {
 
                   <Divider />
 
-                  <Typography>
+                  {renderScheduleDetails(values.schedule_frequency)}
+
+                  <Divider />
+
+                  <Typography sx={{ fontWeight: 600, marginBottom: "4px" }}>
                     Select the models to sync to this destination
                   </Typography>
                   <Stack direction="row" xs={12} alignItems="center">
@@ -427,6 +447,75 @@ const renderConnectionDetails = (vendor_type, setFieldValue, values) => {
     default:
       return <Typography>Error: Destination type not supported</Typography>;
   }
+};
+
+const renderScheduleDetails = (schedule_frequency) => {
+  return (
+    <>
+      <Typography sx={{ fontWeight: 600, marginBottom: "4px" }}>
+        Select the schedule for this destination
+      </Typography>
+      <Stack direction="row" spacing={2}>
+        <FormSelect
+          id="schedule_frequency"
+          titleText="Schedule Frequency"
+          name="schedule_frequency"
+        >
+          <MenuItem value={"WEEKLY"}>Weekly</MenuItem>
+          <MenuItem value={"DAILY"}>Daily</MenuItem>
+          <MenuItem value={"HOURLY"}>Hourly</MenuItem>
+        </FormSelect>
+
+        {schedule_frequency === "WEEKLY" ? (
+          <FormSelect
+            id="schedule_day"
+            titleText="Schedule Day"
+            name="schedule_day"
+          >
+            <MenuItem value={0}>Sunday</MenuItem>
+            <MenuItem value={1}>Monday</MenuItem>
+            <MenuItem value={2}>Tuesday</MenuItem>
+            <MenuItem value={3}>Wednesday</MenuItem>
+            <MenuItem value={4}>Thursday</MenuItem>
+            <MenuItem value={5}>Friday</MenuItem>
+            <MenuItem value={6}>Saturday</MenuItem>
+          </FormSelect>
+        ) : null}
+        {schedule_frequency === "DAILY" || schedule_frequency === "WEEKLY" ? (
+          <FormSelect
+            id="schedule_hour"
+            titleText="Schedule Hour"
+            name="schedule_hour"
+          >
+            <MenuItem value={0}>12:00 AM</MenuItem>
+            <MenuItem value={1}>1:00 AM</MenuItem>
+            <MenuItem value={2}>2:00 AM</MenuItem>
+            <MenuItem value={3}>3:00 AM</MenuItem>
+            <MenuItem value={4}>4:00 AM</MenuItem>
+            <MenuItem value={5}>5:00 AM</MenuItem>
+            <MenuItem value={6}>6:00 AM</MenuItem>
+            <MenuItem value={7}>7:00 AM</MenuItem>
+            <MenuItem value={8}>8:00 AM</MenuItem>
+            <MenuItem value={9}>9:00 AM</MenuItem>
+            <MenuItem value={10}>10:00 AM</MenuItem>
+            <MenuItem value={11}>11:00 AM</MenuItem>
+            <MenuItem value={12}>12:00 PM</MenuItem>
+            <MenuItem value={13}>1:00 PM</MenuItem>
+            <MenuItem value={14}>2:00 PM</MenuItem>
+            <MenuItem value={15}>3:00 PM</MenuItem>
+            <MenuItem value={16}>4:00 PM</MenuItem>
+            <MenuItem value={17}>5:00 PM</MenuItem>
+            <MenuItem value={18}>6:00 PM</MenuItem>
+            <MenuItem value={19}>7:00 PM</MenuItem>
+            <MenuItem value={20}>8:00 PM</MenuItem>
+            <MenuItem value={21}>9:00 PM</MenuItem>
+            <MenuItem value={22}>10:00 PM</MenuItem>
+            <MenuItem value={23}>11:00 PM</MenuItem>
+          </FormSelect>
+        ) : null}
+      </Stack>
+    </>
+  );
 };
 
 export default AddDestination;
