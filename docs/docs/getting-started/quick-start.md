@@ -26,4 +26,6 @@ docker run \
 
 Navigate to `http://localhost:3000` to start exploring Pontoon or checkout the API docs at `http://localhost:8000/docs`.
 
-To learn about adding a source, check out the [Sources & Destinations documentation](../sources-destinations/overview.md).
+The [Transfer Quick Start Guide](./transfer-quick-start.md) has the next steps for building your first data sync!
+
+To learn more about a specific source or destination, check out the [Sources & Destinations docs](../sources-destinations/overview.md).

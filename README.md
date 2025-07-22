@@ -30,7 +30,7 @@
 
 # About
 
-Pontoon is an open source, self-hosted, data export platform. We built Pontoon from the ground up for the use case of shipping data products to your enterprise customers. APIs are painful to work with at modern data scale and Pontoon is built to make it easy to sync data directly to your customer's data warehouse. Your customers get their data, without needing to build ETLs or pay for ETL tools, empowering them to make data driven decisions for their business with data from your product. Welcome to the future of customer data syncs 🚀
+Pontoon is an open source, self-hosted, data export platform. We built Pontoon from the ground up for the use case of shipping data products to your enterprise customers. APIs are painful to work with at modern data scale and Pontoon is built to make it easy to sync data directly to your customer's data warehouse. Your customers get their data, without needing to build ETLs or pay for ETL tools, empowering them to make data driven decisions for their business, with data from your product. Welcome to the future of customer data syncs 🚀
 
 > Want to get Pontoon up and running in minutes? Try our [Quick Start Guide](https://pontoon-data.github.io/Pontoon/getting-started/quick-start/).
 
@@ -43,8 +43,8 @@ Pontoon is an open source, self-hosted, data export platform. We built Pontoon f
 - **🚀 Easy Deployment**: [Get started](https://pontoon-data.github.io/Pontoon/getting-started/quick-start/) in minutes with Docker or deploy to [AWS Fargate](https://pontoon-data.github.io/Pontoon/getting-started/aws-fargate/)
 - **🎯 Major Data Warehouses Integrations**: Supports [Snowflake](https://www.snowflake.com/), [Google BigQuery](https://cloud.google.com/bigquery), [Amazon Redshift](https://aws.amazon.com/redshift/), and [Postgres](https://www.postgresql.org/) as sources and destinations
 - **☁️ Multi-cloud**: Send data from any cloud to any cloud. Amazon Redshift ➡️ Google BigQuery? No problem!
-- **🏗️ Built for Scale**: Sync over 1 million records per minutea
-- **⚡ Automated Syncs**: Schedule data transfers with automatic backfills and incremental loads
+- **⚡ Automated Syncs**: Schedule data transfers with automatic backfills. Incremental loads automatically keep destination datasets in sync
+- **🏗️ Built for Scale**: Sync over 1 million records per minute
 - **✨ Web Interface**: User-friendly dashboard for managing syncs, built with React/Nextjs
 - **🔌 REST API**: Programmatic access to all Pontoon features, built with FastAPI
 
@@ -65,7 +65,7 @@ Pontoon solves these problems with:
 
 - **Direct Warehouse Integration**: Send data directly to customer's data warehouse. No more ETLs needed!
 - **Scalable Architecture**: Handle millions of rows efficiently. Say goodbye to rate limits!
-- **Scheduled Syncs**: Automate data delivery with automatic backfills on the first sync
+- **Automated Scheduled Syncs**: Automatically keep destinations up to date, only syncing data that's changed/new. Backfills are completed on the first sync.
 - **Self-Hosted**: Full control over your data and infrastructure
 
 # Is Pontoon Just Another ETL Platform?
@@ -96,7 +96,11 @@ docker run \
     ghcr.io/pontoon-data/pontoon/pontoon-unified:latest
 ```
 
-To view the Web UI: `localhost:3000`. To view the OpenAPI docs / test the API: `localhost:8000/docs`
+> Note: If you're using CMD or Powershell, run the command in one line, without `\`
+
+To view the Web UI: `localhost:3000`. To view the OpenAPI docs / test the API: `localhost:8000/docs`.
+
+Check out the [transfer quick start guide](https://pontoon-data.github.io/Pontoon/getting-started/transfer-quick-start/) to add your first source and destination.
 
 ## Running Pontoon with Docker Compose
 
@@ -107,3 +111,7 @@ To build Pontoon from source, use Docker Compose.
 ```sh
 docker compose up --build
 ```
+
+## Creating Your First Data Export
+
+To quickly set up your first transfer in Pontoon, follow the steps in the [transfer quick start](https://pontoon-data.github.io/Pontoon/getting-started/transfer-quick-start/) guide!
