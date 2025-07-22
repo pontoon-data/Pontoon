@@ -30,7 +30,9 @@
 
 # About
 
-Pontoon is an open source, self-hosted, data export platform. We built Pontoon from the ground up for the use case of shipping data products to your enterprise customers. APIs are painful to work with at modern data scale and Pontoon is built to make it easy to sync data directly to your customer's data warehouse. Your customers get their data, without needing to build ETLs or pay for ETL tools, empowering them to make data driven decisions for their business, with data from your product. Welcome to the future of customer data syncs 🚀
+Pontoon is an open source, self-hosted, data export platform. We built Pontoon from the ground up for the use case of shipping data products to your enterprise customers.
+
+Pontoon is engineered to make it easy to sync data directly to your customer's data warehouse (eg. [Snowflake](https://www.snowflake.com/), [BigQuery](https://cloud.google.com/bigquery), and [Redshift](https://aws.amazon.com/redshift/)). Your customers get their data, without needing to build ETLs or pay for ETL tools, empowering them to make data driven decisions for their business, with data from your product. Welcome to the future of customer data syncs 🚀
 
 > Want to get Pontoon up and running in minutes? Try our [Quick Start Guide](https://pontoon-data.github.io/Pontoon/getting-started/quick-start/).
 
@@ -47,6 +49,7 @@ Pontoon is an open source, self-hosted, data export platform. We built Pontoon f
 - **🏗️ Built for Scale**: Sync over 1 million records per minute
 - **✨ Web Interface**: User-friendly dashboard for managing syncs, built with React/Nextjs
 - **🔌 REST API**: Programmatic access to all Pontoon features, built with FastAPI
+- **✅ Open Source**: Complete control over your data and infrastructure with zero lock-in
 
 # The Problem with APIs & Data
 
