@@ -48,6 +48,7 @@ const ModelsTable = () => {
     error: sourcesError,
     isLoading: isSourcesLoading,
   } = useSWR("/sources", getRequest);
+  const filteredSources = sources?.filter((s) => s.state === "CREATED");
   const router = useRouter();
   const theme = useTheme();
   return (
@@ -59,7 +60,9 @@ const ModelsTable = () => {
           href="/models/new"
           component={Link}
           startIcon={<IconPlus />}
-          disabled={isSourcesLoading || sourcesError || _.isEmpty(sources)}
+          disabled={
+            isSourcesLoading || sourcesError || _.isEmpty(filteredSources)
+          }
         >
           <Typography>New Model</Typography>
         </Button>
@@ -113,7 +116,7 @@ const ModelsTable = () => {
               numColumns={4}
               isEmpty={_.isEmpty(data)}
               emptyComponent={
-                _.isEmpty(sources) ? (
+                _.isEmpty(filteredSources) ? (
                   <TablePlaceholderRow
                     numColumns={4}
                     header={"No data sources connected"}

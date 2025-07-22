@@ -61,6 +61,7 @@ const DestinationsTable = () => {
     error: sourcesError,
     isLoading: isSourcesLoading,
   } = useSWR("/sources", getRequest);
+  const filteredSources = sources?.filter((s) => s.state === "CREATED");
   const router = useRouter();
   const theme = useTheme();
   const isError =
@@ -71,11 +72,11 @@ const DestinationsTable = () => {
     isModelsLoading ||
     isSourcesLoading;
   const canAddDestination =
-    _.isArray(sources) &&
-    !_.isEmpty(sources) &&
+    _.isArray(filteredSources) &&
+    !_.isEmpty(filteredSources) &&
     _.isArray(models) &&
     !_.isEmpty(models);
-  const emptySources = _.isEmpty(sources);
+  const emptySources = _.isEmpty(filteredSources);
   const emptyModels = _.isEmpty(models);
   const emptyRecipients = _.isEmpty(recipients);
 
