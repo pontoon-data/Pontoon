@@ -8,8 +8,8 @@ Pontoon is an open source, self-hosted data export platform that is built from t
 
 ### Key Features
 
-- **🚀 Easy Deployment**: [Get started](getting-started/quick-start.md) in minutes with Docker or deploy to AWS Fargate
-- **🎯 Major Data Warehouses Integrations**: Supports Snowflake, BigQuery, Redshift, and Postgres as sources and destinations
+- **🚀 Easy Deployment**: [Get started](getting-started/quick-start.md) in minutes with Docker or deploy to [AWS Fargate](getting-started/aws-fargate.md)
+- **🎯 Major Data Warehouses Integrations**: Supports [Snowflake](https://www.snowflake.com/), [Google BigQuery](https://cloud.google.com/bigquery), [Amazon Redshift](https://aws.amazon.com/redshift/), and [Postgres](https://www.postgresql.org/) as sources and destinations
 - **☁️ Multi-cloud**: Send data from any cloud to any cloud. Amazon Redshift ➡️ Google BigQuery? No problem!
 - **🏗️ Built for Scale**: Sync over 1 million records per minutea
 - **⚡ Automated Syncs**: Schedule data transfers with automatic backfills and incremental loads
