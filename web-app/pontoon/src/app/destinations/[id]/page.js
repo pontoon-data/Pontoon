@@ -42,6 +42,8 @@ import dayjs from "dayjs";
 import LocalizedFormat from "dayjs/plugin/localizedFormat";
 import Duration from "dayjs/plugin/duration";
 import RelativeTime from "dayjs/plugin/relativeTime";
+import timezone from "dayjs/plugin/timezone";
+import advancedFormat from "dayjs/plugin/advancedFormat";
 import TableBodyWrapper from "@/app/components/shared/TableBodyWrapper";
 import { getScheduleText, getNextRunTime } from "@/utils/common";
 import {
@@ -54,6 +56,8 @@ import {
 dayjs.extend(LocalizedFormat);
 dayjs.extend(RelativeTime);
 dayjs.extend(Duration);
+dayjs.extend(timezone);
+dayjs.extend(advancedFormat);
 
 const getDataForTable = (destinationData, recipientData, modelsData) => {
   const destination = destinationData;
@@ -75,8 +79,8 @@ const getDataForTable = (destinationData, recipientData, modelsData) => {
         ["Warehouse", snowflake.warehouse],
         ["Schema", snowflake.target_schema],
         ["Username", snowflake.user],
-        ["Created", dayjs(destination.created_at).format("LLL").toString()],
-        ["Updated", dayjs(destination.modified_at).format("LLL").toString()],
+        ["Created", dayjs(destination.created_at).format("LLL z").toString()],
+        ["Updated", dayjs(destination.modified_at).format("LLL z").toString()],
       ];
     case "bigquery":
       const bq = destination.connection_info;
@@ -92,8 +96,11 @@ const getDataForTable = (destinationData, recipientData, modelsData) => {
         ["GCS Bucket", bq.gcs_bucket],
         ["GCS Prefix", bq.gcs_prefix],
         ["Schema", bq.target_schema],
-        ["Created At", dayjs(destination.created_at).format("LLL").toString()],
-        ["Updated", dayjs(destination.modified_at).format("LLL").toString()],
+        [
+          "Created At",
+          dayjs(destination.created_at).format("LLL z").toString(),
+        ],
+        ["Updated", dayjs(destination.modified_at).format("LLL z").toString()],
       ];
     case "redshift":
       const redshift = destination.connection_info;
@@ -113,8 +120,11 @@ const getDataForTable = (destinationData, recipientData, modelsData) => {
         ["IAM Role", redshift.iam_role],
         ["Schema", redshift.target_schema],
         ["Username", redshift.user],
-        ["Created At", dayjs(destination.created_at).format("LLL").toString()],
-        ["Updated", dayjs(destination.modified_at).format("LLL").toString()],
+        [
+          "Created At",
+          dayjs(destination.created_at).format("LLL z").toString(),
+        ],
+        ["Updated", dayjs(destination.modified_at).format("LLL z").toString()],
       ];
     case "postgresql":
       const postgresql = destination.connection_info;
@@ -130,8 +140,11 @@ const getDataForTable = (destinationData, recipientData, modelsData) => {
         ["Database", postgresql.database],
         ["Schema", postgresql.target_schema],
         ["Username", postgresql.user],
-        ["Created At", dayjs(destination.created_at).format("LLL").toString()],
-        ["Updated", dayjs(destination.modified_at).format("LLL").toString()],
+        [
+          "Created At",
+          dayjs(destination.created_at).format("LLL z").toString(),
+        ],
+        ["Updated", dayjs(destination.modified_at).format("LLL z").toString()],
       ];
     default:
       console.log("Error reading data for details");
@@ -435,10 +448,12 @@ const TransferTable = ({ schedule, id }) => {
                   <TableCell>
                     <Typography noWrap variant="subtitle2" fontWeight={600}>
                       {transfer.created_at
-                        ? dayjs(transfer.created_at).format("LLL").toString()
+                        ? dayjs(transfer.created_at).format("LLL z").toString()
                         : ""}
                       {transfer.scheduled_at
-                        ? dayjs(transfer.scheduled_at).format("LLLL").toString()
+                        ? dayjs(transfer.scheduled_at)
+                            .format("LLLL z")
+                            .toString()
                         : ""}
                     </Typography>
                   </TableCell>

@@ -9,13 +9,17 @@ import Link from "next/link";
 import Skeleton from "@mui/material/Skeleton";
 import ListTable from "@/app/components/shared/ListTable";
 import useSWRMutation from "swr/mutation";
-import { useRouter } from "next/navigation";
+import { useRouter, useParams } from "next/navigation";
 
 import dayjs from "dayjs";
 import LocalizedFormat from "dayjs/plugin/localizedFormat";
+import timezone from "dayjs/plugin/timezone";
+import advancedFormat from "dayjs/plugin/advancedFormat";
 import { getRequest, deleteRequest } from "@/app/api/requests";
 
 dayjs.extend(LocalizedFormat);
+dayjs.extend(timezone);
+dayjs.extend(advancedFormat);
 
 const getDataForTable = (data) => {
   return [
@@ -24,12 +28,13 @@ const getDataForTable = (data) => {
     ["Primary Key Column", data.primary_key_column],
     ["Tenant ID Column", data.tenant_id_column],
     ["Last Modified Column", data.last_modified_at_column],
-    ["Created", dayjs(data.created_at).format("LLL").toString()],
-    ["Updated", dayjs(data.modified_at).format("LLL").toString()],
+    ["Created", dayjs(data.created_at).format("LLL z").toString()],
+    ["Updated", dayjs(data.modified_at).format("LLL z").toString()],
   ];
 };
 
-const ModelDetails = ({ params }) => {
+const ModelDetails = () => {
+  const params = useParams();
   const { id } = params;
   const { data, error, isLoading } = useSWR(`/models/${id}`, getRequest);
   const { trigger: triggerDelete } = useSWRMutation(

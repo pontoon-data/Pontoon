@@ -8,13 +8,17 @@ import EditIcon from "@mui/icons-material/Edit";
 import Link from "next/link";
 import ListTable from "@/app/components/shared/ListTable";
 import useSWRMutation from "swr/mutation";
-import { useRouter } from "next/navigation";
+import { useRouter, useParams } from "next/navigation";
 
 import dayjs from "dayjs";
 import LocalizedFormat from "dayjs/plugin/localizedFormat";
+import timezone from "dayjs/plugin/timezone";
+import advancedFormat from "dayjs/plugin/advancedFormat";
 import { getRequest, deleteRequest } from "@/app/api/requests";
 
 dayjs.extend(LocalizedFormat);
+dayjs.extend(timezone);
+dayjs.extend(advancedFormat);
 
 const getDataForTable = (data) => {
   const d = data;
@@ -24,16 +28,16 @@ const getDataForTable = (data) => {
         ["Vendor", "Snowflake"],
         ["Account", d.connection_info.account],
         ["Warehouse", d.connection_info.warehouse],
-        ["Created", dayjs(d.created_at).format("LLL").toString()],
-        ["Updated", dayjs(d.modified_at).format("LLL").toString()],
+        ["Created", dayjs(d.created_at).format("LLL z").toString()],
+        ["Updated", dayjs(d.modified_at).format("LLL z").toString()],
       ];
     case "bigquery":
       return [
         ["Vendor", "BigQuery"],
         ["Project ID", d.connection_info.project_id],
         ["Dataset", d.connection_info.dataset],
-        ["Created At", dayjs(d.created_at).format("LLL").toString()],
-        ["Updated", dayjs(d.modified_at).format("LLL").toString()],
+        ["Created At", dayjs(d.created_at).format("LLL z").toString()],
+        ["Updated", dayjs(d.modified_at).format("LLL z").toString()],
       ];
     case "redshift":
       return [
@@ -42,8 +46,8 @@ const getDataForTable = (data) => {
         ["Port", d.connection_info.port],
         ["Database", d.connection_info.database],
         ["Username", d.connection_info.user],
-        ["Created At", dayjs(d.created_at).format("LLL").toString()],
-        ["Updated", dayjs(d.modified_at).format("LLL").toString()],
+        ["Created At", dayjs(d.created_at).format("LLL z").toString()],
+        ["Updated", dayjs(d.modified_at).format("LLL z").toString()],
       ];
     case "postgresql":
       return [
@@ -52,21 +56,22 @@ const getDataForTable = (data) => {
         ["Port", d.connection_info.port],
         ["Database", d.connection_info.database],
         ["Username", d.connection_info.user],
-        ["Created At", dayjs(d.created_at).format("LLL").toString()],
-        ["Updated", dayjs(d.modified_at).format("LLL").toString()],
+        ["Created At", dayjs(d.created_at).format("LLL z").toString()],
+        ["Updated", dayjs(d.modified_at).format("LLL z").toString()],
       ];
     case "memory":
       return [
         ["Vendor", "Memory"],
-        ["Created At", dayjs(d.created_at).format("LLL").toString()],
-        ["Updated", dayjs(d.modified_at).format("LLL").toString()],
+        ["Created At", dayjs(d.created_at).format("LLL z").toString()],
+        ["Updated", dayjs(d.modified_at).format("LLL z").toString()],
       ];
     default:
       console.log("Error reading data for details");
   }
 };
 
-const SourceDetails = ({ params }) => {
+const SourceDetails = () => {
+  const params = useParams();
   const { id } = params;
   const {
     data: source,

@@ -13,16 +13,20 @@ import { useRouter, useParams } from "next/navigation";
 
 import dayjs from "dayjs";
 import LocalizedFormat from "dayjs/plugin/localizedFormat";
+import timezone from "dayjs/plugin/timezone";
+import advancedFormat from "dayjs/plugin/advancedFormat";
 import { getRequest, deleteRequest } from "@/app/api/requests";
 
 dayjs.extend(LocalizedFormat);
+dayjs.extend(timezone);
+dayjs.extend(advancedFormat);
 
 const getDataForTable = (data) => {
   return [
     ["Name", data.recipient_name],
     ["Tenant ID", data.tenant_id],
-    ["Created", dayjs(data.created_at).format("LLL").toString()],
-    ["Updated", dayjs(data.modified_at).format("LLL").toString()],
+    ["Created", dayjs(data.created_at).format("LLL z").toString()],
+    ["Updated", dayjs(data.modified_at).format("LLL z").toString()],
   ];
 };
 
