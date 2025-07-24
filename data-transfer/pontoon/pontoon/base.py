@@ -6,6 +6,7 @@
 
 import hashlib
 import json
+import time
 from uuid import UUID
 from datetime import datetime, timedelta, timezone
 from decimal import Decimal
@@ -133,28 +134,38 @@ class Stream:
         # take a row of raw data and return a schema Record """
 
         type_map = Stream.PY_CONVERSION_MAP
+        drop_fields = self._drop_fields
+        extra_fields = self._extra_fields
+        schema_names = self.schema.names
 
-        def _convert(val):
+        # Avoid rebuilding on each call
+        if not hasattr(self, "_field_lookup"):
+            self._field_lookup = {name: i for i, name in enumerate(schema_names)}
+        field_lookup = self._field_lookup
+
+        # Pre-resolve functions for types to avoid repeated dict lookups
+        def convert(val):
             py_type = type(val)
             if py_type is datetime:
                 return val.astimezone(timezone.utc)
-            return type_map.get(py_type, lambda x: x)(val)
+            fn = type_map.get(py_type)
+            return fn(val) if fn else val
 
-        new_row = [val for i, val in enumerate(row) if i not in self._drop_fields]
-        new_row = list(map(_convert, new_row))
-        new_row += [None] * len(self._extra_fields)
-        
-        field_names = self.schema.names
-        field_lookup = dict(zip(field_names, range(len(field_names))))
+        # Fast drop field filtering
+        filtered_row = [row[i] for i in range(len(row)) if i not in drop_fields]
 
-        for field, val in self._extra_fields.items():
+        # Convert types in-place
+        converted_row = [convert(val) for val in filtered_row]
+
+        # Pre-allocate full row with space for all fields
+        final_row = converted_row + [None] * len(extra_fields)
+
+        # Fill extra fields
+        for field, val in extra_fields.items():
             idx = field_lookup[field]
-            if callable(val):
-                new_row[idx] = val(row)
-            else:
-                new_row[idx] = val
+            final_row[idx] = val(row) if callable(val) else val
 
-        return Record(new_row)
+        return Record(final_row)
 
 
     @staticmethod
@@ -198,6 +209,10 @@ class Cache(ABC):
     @abstractmethod
     def read(self, stream:Stream) -> Generator[Record, None, None]:
         pass
+    
+    @abstractmethod
+    def size(self, stream:Stream) -> int:
+        pass
 
     @abstractmethod
     def close(self):
@@ -237,12 +252,65 @@ class Dataset:
         raise ValueError(f"{stream_name} not in dataset.")
 
 
-class Progress:
-    """ A class to represent progress of stream processing """
 
-    def __init__(self, total_records:int, processed:int):
-        self.total_records = total_records
+class Progress:
+    """ A class to represent progress of stream processing with rate tracking """
+
+    def __init__(self, entity:str, total:int = 0, processed:int = 0):
+        self.entity = entity
+        self.total = total
         self.processed = processed
+        self.start_time = time.time()
+        self.last_update_time = self.start_time
+        self.last_processed = processed
+        self._rate = 0.0
+        self.percent = 0.0
+
+    def update(self, processed: int, increment: bool = False):
+        now = time.time()
+        if increment:
+            self.processed += processed
+        else:
+            self.processed = processed
+
+        # Update rate (records per second)
+        elapsed = now - self.last_update_time
+        if elapsed > 0:
+            delta = self.processed - self.last_processed
+            self._rate = delta / elapsed
+
+        self.last_update_time = now
+        self.last_processed = self.processed
+
+        # Update percent (avoiding div by zero)
+        if self.total:
+            self.percent = (self.processed / self.total) * 100
+        else:
+            self.percent = 0.0
+        
+        return self
+
+    def rate(self):
+        """ Return current rate in records per second """
+        return self._rate
+
+    def eta(self):
+        """ Estimated time remaining in seconds """
+        if self._rate > 0 and self.total:
+            remaining = self.total - self.processed
+            return remaining / self._rate
+        return None
+
+    def summary(self):
+        return {
+            "entity": self.entity,
+            "processed": self.processed,
+            "total": self.total,
+            "percent": round(self.percent, 2),
+            "rate_rps": round(self._rate, 2),
+            "eta_seconds": round(self.eta(), 2) if self.eta() is not None else None,
+        }
+
 
 
 class Mode:
