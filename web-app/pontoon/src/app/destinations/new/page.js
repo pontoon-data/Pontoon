@@ -484,7 +484,7 @@ const renderScheduleDetails = (schedule_frequency) => {
         {schedule_frequency === "DAILY" || schedule_frequency === "WEEKLY" ? (
           <FormSelect
             id="schedule_hour"
-            titleText="Schedule Hour"
+            titleText="Schedule Hour (UTC)"
             name="schedule_hour"
           >
             <MenuItem value={0}>12:00 AM</MenuItem>
