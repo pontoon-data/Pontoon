@@ -263,8 +263,14 @@ class Progress:
         self.start_time = time.time()
         self.last_update_time = self.start_time
         self.last_processed = processed
+        self._subscribers = []
         self._rate = 0.0
         self.percent = 0.0
+
+
+    def _notify(self):
+        for handler in self._subscribers:
+            hander(self)
 
     def update(self, processed: int, increment: bool = False):
         now = time.time()
@@ -287,15 +293,21 @@ class Progress:
             self.percent = (self.processed / self.total) * 100
         else:
             self.percent = 0.0
-        
+
+        self._notify()
+
         return self
 
+    def subscribe(self, handler):
+        self._subscribers.append(handler)
+        self._notify()
+
     def rate(self):
-        """ Return current rate in records per second """
+        # Return current rate in records per second
         return self._rate
 
     def eta(self):
-        """ Estimated time remaining in seconds """
+        # Estimated time remaining in seconds
         if self._rate > 0 and self.total:
             remaining = self.total - self.processed
             return remaining / self._rate

@@ -243,13 +243,6 @@ class SQLSource(Source):
     
     def read(self, progress_callback=None) -> Dataset:
         # Read from source and write to a cached Dataset
-        
-        if callable(progress_callback):
-            self._progress_callback = progress_callback
-        else:
-            self._progress_callback = lambda *args, **kwargs: None
-
-        total_records = 0
 
         with self._connect() as conn:
 
@@ -310,7 +303,8 @@ class SQLSource(Source):
                     total=total_count,
                     processed=0
                 )
-                self._progress_callback(progress)
+                if callable(progress_callback):
+                    progress.subscribe(progress_callback)
 
                 # execute our main query 
                 result = conn.execution_options(
@@ -324,18 +318,14 @@ class SQLSource(Source):
                 batch = []
                 for row in result:
                     batch.append(stream.to_record(row))
-                    total_records += 1
                     if(len(batch)) == self._chunk_size:
                         self._cache.write(stream, batch)
-                        self._progress_callback(Progress(-1, total_records))
+                        progress.update(self._chunk_size, increment=True)
                         batch = []
 
                 if len(batch) > 0:
                     self._cache.write(stream, batch)
-                    self._progress_callback(Progress(-1, total_records))        
-
-        # final progress update
-        self._progress_callback(Progress(total_records, 0))
+                    progress.update(len(batch), increment=True)       
 
         # return our dataset
         return Dataset(
