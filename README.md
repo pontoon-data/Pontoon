@@ -85,6 +85,23 @@ Pontoon is used by vendors (eg. Salesforce) to **provide data syncs** as a produ
   <img src="assets/etl-vs-pontoon.png" alt="How Pontoon Works vs ETLs" width="980" />
 </div>
 
+# Pontoon vs. Other ETL / Reverse-ETL Tools
+
+|                                        | **Pontoon**   | Airbyte | Singer/Stitch      | Fivetran | Hightouch                 | Prequel | Bobsled |
+| ---------------------------------      | ------------- | ------- | ------------------ | -------- | ------------------------- | ------- | ------- |
+| **Open Source**                        | ✅ Yes         | ✅ Yes   | ✅ Singer only      | ❌ No     | ⚠️ Some SDKs              | ❌ No    | ❌ No    |
+| **Self-Hosted Option**                 | ✅ Yes         | ✅ Yes   | ✅ Yes              | ❌ No     | ✅ Yes                     | ❌ No    | ❌ No    |
+| **First-class Data Products**          | ✅ Yes         | ❌ No    | ❌ No               | ❌ No     | ⚠️ Possible (with effort) | ✅ Yes   | ✅ Yes   |
+| **Multi-Tenant Data Export**           | ✅ Yes         | ❌ No    | ❌ No               | ❌ No     | ⚠️ Custom                 | ✅ Yes   | ✅ Yes   |
+| **Direct Data Warehouse Integrations** | ✅ Yes         | ✅ Yes   | ⚠️ Destinations only     | ⚠️ Destinations only | ⚠️ Sources only          | ✅ Yes   | ✅ Yes |
+| **DBT Integration**                   | 🚧 Coming soon  | ❌ No    | ❌ No               | ⚠️ Limited | ✅ Yes | ❌ No | ❌ No |
+| **Bulk Transfers (millions/billions of rows)** | ✅ Yes   | ✅ Yes   | ⚠️ Possible        | ⚠️ Possible | ❌ No                    | ✅ Yes   | ✅ Yes |
+| **Full Database/Table Replication**         | ❌ No          | ✅ Yes   | ❌ No               | ❌ No | ❌ No                       | ❌ No     | ❌ No |  
+| **Free to Use**                        | ✅ Yes         | ✅ Yes   | ✅ Yes (Singer CLI) | ❌ No     | ⚠️ Limited                 | ❌ No    | ❌ No    |
+
+
+
+
 # Quick Start
 
 Get Pontoon running in seconds with our official docker image. Visit our [docs](https://pontoon-data.github.io/Pontoon/getting-started/quick-start/) for more information.
