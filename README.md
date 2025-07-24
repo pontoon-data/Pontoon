@@ -85,7 +85,7 @@ Pontoon is used by vendors (eg. Salesforce) to **provide data syncs** as a produ
   <img src="assets/etl-vs-pontoon.png" alt="How Pontoon Works vs ETLs" width="980" />
 </div>
 
-# Pontoon vs. Other ETL / Reverse-ETL Tools
+# Pontoon vs. Other ETL / Reverse-ETL Platforms
 
 |                                        | **Pontoon**   | Airbyte | Singer/Stitch      | Fivetran | Hightouch                 | Prequel | Bobsled |
 | ---------------------------------      | ------------- | ------- | ------------------ | -------- | ------------------------- | ------- | ------- |
