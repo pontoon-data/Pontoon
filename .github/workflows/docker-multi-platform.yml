@@ -33,6 +33,8 @@ jobs:
   build:
     needs: set-matrix
     runs-on: ubuntu-latest
+    permissions:
+      packages: write
     strategy:
       matrix:
         platform: ${{ fromJson(needs.set-matrix.outputs.matrix) }}
