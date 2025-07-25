@@ -5,6 +5,7 @@ import snowflake.connector
 from pontoon.base import Namespace, Destination, Stream, Dataset, Record, Progress
 from pontoon.source.sql_source import SQLUtil
 from pontoon.destination import ObjectStoreBase
+from pontoon.destination.integrity import SMSIntegrity
 
 
 class SnowflakeStorageDestination(ObjectStoreBase):
@@ -67,6 +68,10 @@ class SnowflakeStorageDestination(ObjectStoreBase):
         # clean up
         os.remove(parquet_file_path)
    
+    
+    def integrity(self):
+        return SMSIntegrity(self._get_snowflake_client())
+        
     
     def write(self, ds:Dataset, progress_callback=None):
         # Write a dataset to Snowflake storage stage

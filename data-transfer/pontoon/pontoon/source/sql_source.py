@@ -3,7 +3,7 @@ import re
 from typing import List, Dict, Tuple, Generator, Any
 from datetime import datetime, timezone, date
 from decimal import Decimal
-from sqlalchemy import create_engine, inspect, MetaData, Table, text
+from sqlalchemy import create_engine, inspect, MetaData, Table, text, select, func
 
 from pontoon import logger
 from pontoon.base import Source, Namespace, Stream, Dataset, Progress, Mode
@@ -59,7 +59,7 @@ class SQLUtil:
 
 
     @staticmethod
-    def build_select_query(stream:Stream, mode:Mode) -> str:
+    def build_select_query(stream:Stream, mode:Mode, count:bool=False) -> str:
         
         # shorthand pointers
         e = SQLUtil.to_sql_value
@@ -81,10 +81,14 @@ class SQLUtil:
             serial = [f"{s(f['col'])} {f['op']} {f['value']}" for f in filters]
             where_clause = f" WHERE {' AND '.join(serial)}"
 
-        select_query = f"SELECT {cols} FROM {s(stream.schema_name)}.{s(stream.name)}{where_clause}"
+        if count == True:
+            func = "count(1)"
+        else:
+            func = f"{cols}"
+
+        select_query = f"SELECT {func} FROM {s(stream.schema_name)}.{s(stream.name)}{where_clause}"
 
         return select_query
-
 
 
 class SQLSource(Source):
@@ -94,7 +98,6 @@ class SQLSource(Source):
     def __init__(self, config, cache_implementation, cache_config={}):
         self._config = config
         self._streams = []
-        self._progress_callback = None
 
         connect = config.get('connect')
 
@@ -239,13 +242,6 @@ class SQLSource(Source):
     
     def read(self, progress_callback=None) -> Dataset:
         # Read from source and write to a cached Dataset
-        
-        if callable(progress_callback):
-            self._progress_callback = progress_callback
-        else:
-            self._progress_callback = lambda *args, **kwargs: None
-
-        total_records = 0
 
         with self._connect() as conn:
 
@@ -279,17 +275,8 @@ class SQLSource(Source):
                     schema=Stream.build_schema(columns)
                 )
 
-                # likely a separate config block with boolean include options
-                self._streams.append(stream)
-
-                # read the stream into cache
-                query = SQLUtil.build_select_query(stream, self._mode)
-                result = conn.execution_options(
-                    stream_results=True, 
-                    max_row_buffer=self._chunk_size
-                ).execute(
-                    text(query)
-                )
+                count_query = SQLUtil.build_select_query(stream, self._mode, count=True) 
+                select_query = SQLUtil.build_select_query(stream, self._mode)
 
                 # ignore any stream fields?
                 if stream_config.get('drop_fields'):
@@ -306,21 +293,38 @@ class SQLSource(Source):
                 if self._with.get('last_sync'):
                     stream.with_last_synced_at(self._sync_time)
 
+                self._streams.append(stream)
+
+                # configure progress tracking
+                total_count = conn.execute(text(count_query)).scalar_one()
+                progress = Progress(
+                    f"source+sql://{self._namespace}/{stream.schema_name}/{stream.name}",
+                    total=total_count,
+                    processed=0
+                )
+                if callable(progress_callback):
+                    progress.subscribe(progress_callback)
+
+                # execute our main query 
+                result = conn.execution_options(
+                    stream_results=True, 
+                    max_row_buffer=self._chunk_size
+                ).execute(
+                    text(select_query)
+                )
+
+                # read the stream into cache
                 batch = []
                 for row in result:
                     batch.append(stream.to_record(row))
-                    total_records += 1
                     if(len(batch)) == self._chunk_size:
                         self._cache.write(stream, batch)
-                        self._progress_callback(Progress(-1, total_records))
+                        progress.update(self._chunk_size, increment=True)
                         batch = []
 
                 if len(batch) > 0:
                     self._cache.write(stream, batch)
-                    self._progress_callback(Progress(-1, total_records))        
-
-        # final progress update
-        self._progress_callback(Progress(total_records, 0))
+                    progress.update(len(batch), increment=True)       
 
         # return our dataset
         return Dataset(

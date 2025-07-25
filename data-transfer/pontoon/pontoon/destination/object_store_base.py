@@ -97,7 +97,6 @@ class ObjectStoreBase(Destination):
         self._dt = None
         self._batch_id = None
         self._ds = None
-        self._progress_callback = None
         
     
     @abstractmethod
@@ -110,34 +109,33 @@ class ObjectStoreBase(Destination):
         self._batch_id = ds.meta.get('batch_id')
         self._dt = ds.meta.get('dt')
 
-        total_records = 0
-
-        if callable(progress_callback):
-            self._progress_callback = progress_callback
-        else:
-            self._progress_callback = lambda *args, **kwargs: None
 
         # write streams in batches
         for stream in ds.streams:
+
+            # configure progress tracking
+            progress = Progress(
+                f"destination+object://{ds.namespace}/{stream.schema_name}/{stream.name}",
+                total=ds.size(stream),
+                processed=0
+            )
+            if callable(progress_callback):
+                progress.subscribe(progress_callback)
+
             batch = []
             batch_index = 0
             for record in ds.read(stream):
                 batch.append(record)
                 if len(batch) == self._batch_size:
-                    total_records += self._batch_size
                     self._write_batch(stream, batch, batch_index)
-                    self._progress_callback(Progress(-1, total_records))
+                    progress.update(self._batch_size, increment=True)
                     batch = []
                     batch_index += 1
             
             if batch:
-                total_records += len(batch)
                 self._write_batch(stream, batch, batch_index)
-                self._progress_callback(Progress(-1, total_records))
-        
-        # we're done
-        self._progress_callback(Progress(total_records, 0))
-    
+                progress.update(len(batch), increment=True)
+ 
 
     def close(self):
         pass

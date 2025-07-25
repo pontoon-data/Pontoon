@@ -6,6 +6,7 @@
 
 import hashlib
 import json
+import time
 from uuid import UUID
 from datetime import datetime, timedelta, timezone
 from decimal import Decimal
@@ -20,6 +21,9 @@ class Namespace:
     """ A class to represent a namespace """
     def __init__(self, name:str):
         self.name = name
+    
+    def __str__(self):
+        return self.name
 
 
 class Record:
@@ -133,28 +137,38 @@ class Stream:
         # take a row of raw data and return a schema Record """
 
         type_map = Stream.PY_CONVERSION_MAP
+        drop_fields = self._drop_fields
+        extra_fields = self._extra_fields
+        schema_names = self.schema.names
 
-        def _convert(val):
+        # Avoid rebuilding on each call
+        if not hasattr(self, "_field_lookup"):
+            self._field_lookup = {name: i for i, name in enumerate(schema_names)}
+        field_lookup = self._field_lookup
+
+        # Pre-resolve functions for types to avoid repeated dict lookups
+        def convert(val):
             py_type = type(val)
             if py_type is datetime:
                 return val.astimezone(timezone.utc)
-            return type_map.get(py_type, lambda x: x)(val)
+            fn = type_map.get(py_type)
+            return fn(val) if fn else val
 
-        new_row = [val for i, val in enumerate(row) if i not in self._drop_fields]
-        new_row = list(map(_convert, new_row))
-        new_row += [None] * len(self._extra_fields)
-        
-        field_names = self.schema.names
-        field_lookup = dict(zip(field_names, range(len(field_names))))
+        # Fast drop field filtering
+        filtered_row = [row[i] for i in range(len(row)) if i not in drop_fields]
 
-        for field, val in self._extra_fields.items():
+        # Convert types in-place
+        converted_row = [convert(val) for val in filtered_row]
+
+        # Pre-allocate full row with space for all fields
+        final_row = converted_row + [None] * len(extra_fields)
+
+        # Fill extra fields
+        for field, val in extra_fields.items():
             idx = field_lookup[field]
-            if callable(val):
-                new_row[idx] = val(row)
-            else:
-                new_row[idx] = val
+            final_row[idx] = val(row) if callable(val) else val
 
-        return Record(new_row)
+        return Record(final_row)
 
 
     @staticmethod
@@ -198,6 +212,10 @@ class Cache(ABC):
     @abstractmethod
     def read(self, stream:Stream) -> Generator[Record, None, None]:
         pass
+    
+    @abstractmethod
+    def size(self, stream:Stream) -> int:
+        pass
 
     @abstractmethod
     def close(self):
@@ -216,15 +234,20 @@ class Dataset:
         # A DataSet is backed by a cache implementation 
         self._cache = cache
 
-    def read(self, stream:Stream) -> Generator[Record, None, None]:
-        
+    def _resolve_stream_name(self, stream:Stream) -> Stream:
         # has the stream been renamed?
         if(stream.name, stream.schema_name) in self._rename_map:
             old_name, old_schema_name = self._rename_map[(stream.name, stream.schema_name)]
-            old_stream = Stream(old_name, old_schema_name, stream.schema)
-            return self._cache.read(old_stream)
-        
-        return self._cache.read(stream)
+            return Stream(old_name, old_schema_name, stream.schema)
+        return stream
+
+    
+    def read(self, stream:Stream) -> Generator[Record, None, None]:
+        return self._cache.read(self._resolve_stream_name(stream))
+
+    
+    def size(self, stream:Stream) -> int:
+        return self._cache.size(self._resolve_stream_name(stream))
 
 
     def rename_stream(self, stream_name:str, schema_name:str, new_name:str, new_schema:str):
@@ -237,12 +260,88 @@ class Dataset:
         raise ValueError(f"{stream_name} not in dataset.")
 
 
-class Progress:
-    """ A class to represent progress of stream processing """
 
-    def __init__(self, total_records:int, processed:int):
-        self.total_records = total_records
+class Progress:
+    """ A class to represent progress of stream processing with rate tracking """
+
+    def __init__(self, entity:str, total:int = 0, processed:int = 0):
+        self._entity = entity
+        self.total = total
         self.processed = processed
+        self.start_time = time.time()
+        self.last_update_time = self.start_time
+        self.last_processed = processed
+        self.last_message = ""
+        self._subscribers = []
+        self._rate = 0.0
+        self.percent = 0.0
+
+
+    def _notify(self):
+        for handler in self._subscribers:
+            handler(self)
+
+    def update(self, processed:int, increment:bool = False, message:str = ""):
+        now = time.time()
+        if increment:
+            self.processed += processed
+        else:
+            self.processed = processed
+
+        self.last_message = message
+
+        # Update rate (records per second)
+        elapsed = now - self.last_update_time
+        if elapsed > 0:
+            delta = self.processed - self.last_processed
+            self._rate = delta / elapsed
+
+        self.last_update_time = now
+        self.last_processed = self.processed
+
+        # Update percent (avoiding div by zero)
+        if self.total:
+            self.percent = (self.processed / self.total) * 100
+        else:
+            self.percent = 0.0
+
+        self._notify()
+
+        return self
+
+    def message(self, message: str):
+        self.update(0, increment=True, message=message)
+
+
+    def subscribe(self, handler):
+        self._subscribers.append(handler)
+        self._notify()
+
+    def rate(self):
+        # Return current rate in records per second
+        return self._rate
+
+    def eta(self):
+        # Estimated time remaining in seconds
+        if self._rate > 0 and self.total:
+            remaining = self.total - self.processed
+            return remaining / self._rate
+        return None
+
+    def entity(self):
+        return self._entity
+
+    def summary(self):
+        return {
+            "entity": self._entity,
+            "processed": self.processed,
+            "total": self.total,
+            "percent": round(self.percent, 2),
+            "rate_rps": round(self._rate, 2),
+            "eta_seconds": round(self.eta(), 2) if self.eta() is not None else None,
+            "message": self.last_message,
+        }
+
 
 
 class Mode:
@@ -300,6 +399,18 @@ class Mode:
         return Mode._DELTA[period]
 
 
+class Integrity(ABC):
+    """ Abstract base class to represent an integrity checker """
+    
+    @abstractmethod
+    def __init__(self):
+        pass
+    
+    @abstractmethod
+    def check_batch_volume(self, ds:Dataset):
+        pass
+
+
 class Source(ABC):
     """ Abstract base class to represent a data source connector """
 
@@ -333,6 +444,10 @@ class Destination(ABC):
 
     @abstractmethod
     def write(self, ds: Dataset, progress_callback=None):
+        pass
+
+    @abstractmethod
+    def integrity(self) -> Integrity:
         pass
     
     @abstractmethod

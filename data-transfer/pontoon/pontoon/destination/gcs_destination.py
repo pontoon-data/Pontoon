@@ -5,6 +5,7 @@ from typing import List, Dict, Any
 from google.cloud import storage
 from pontoon.base import Namespace, Destination, Stream, Dataset, Record, Progress
 from pontoon.destination import ObjectStoreBase
+from pontoon.destination.integrity import GCSIntegrity
 
 
 class GCSConfig:
@@ -72,3 +73,8 @@ class GCSDestination(ObjectStoreBase):
         # clean up
         os.remove(parquet_file_path)
    
+
+    def integrity(self):
+        return GCSIntegrity(
+            storage.Client.from_service_account_json(self._service_account_file)
+        )

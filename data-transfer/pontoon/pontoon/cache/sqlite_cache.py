@@ -26,6 +26,7 @@ class SqliteCache(Cache):
         self._conn = sqlite3.connect(config['db'], detect_types=sqlite3.PARSE_DECLTYPES)
         self._cursor = self._conn.cursor()
         self._chunk_size = config.get('chunk_size', 1000)
+        self._stream_sizes = {}
         
         self._cursor.execute("PRAGMA synchronous = OFF")
         self._cursor.execute("PRAGMA journal_mode = MEMORY")
@@ -76,6 +77,7 @@ class SqliteCache(Cache):
         
         # save so we have an efficient way to check if it exists
         self._stream_tables[table_name] = True
+        self._stream_sizes[table_name] = 0
 
     
     def _insert_rows_to_stream(self, stream:Stream, records:List[Record]):
@@ -87,8 +89,9 @@ class SqliteCache(Cache):
         placeholders = ", ".join("?" for _ in stream.schema.names)
         insert_query = f"INSERT INTO {table_name} VALUES ({placeholders})"
         self._cursor.executemany(insert_query, [tuple(record.data) for record in records])
-
+        self._stream_sizes[table_name] += len(records)
     
+
     def _rows_to_records(self, stream:Stream, rows):
         # covert a sqlite row back into a record      
         return [Record(list(row)) for row in rows]
@@ -115,6 +118,12 @@ class SqliteCache(Cache):
             for record in records:
                 yield record
 
+
+    def size(self, stream:Stream) -> int:
+        table_name = self._stream_table_name(stream)
+        return self._stream_sizes.get(table_name, 0)
+
+    
     def close(self):
         self._conn.commit()
         self._conn.close()

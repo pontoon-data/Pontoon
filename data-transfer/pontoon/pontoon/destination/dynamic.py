@@ -18,6 +18,10 @@ def create_multi_destination(destinations:List[Destination]=[]):
             self._destinations = [dest_cls(config) for dest_cls in destinations]
         
         
+        def integrity(self):
+            return self._destinations[-1].integrity()
+
+
         def write(self, ds:Dataset, progress_callback=None):
             if self._target_schema:
                 for stream in ds.streams:
