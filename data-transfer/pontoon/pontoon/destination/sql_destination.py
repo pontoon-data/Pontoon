@@ -211,7 +211,7 @@ class SQLDestination(Destination):
 
                 # configure progress tracking
                 progress = Progress(
-                    f"{ds.namespace}/{stream.schema_name}/{stream.name}",
+                    f"destination+sql://{ds.namespace}/{stream.schema_name}/{stream.name}",
                     total=ds.size(stream),
                     processed=0
                 )

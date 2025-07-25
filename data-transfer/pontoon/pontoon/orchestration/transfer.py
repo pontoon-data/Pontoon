@@ -77,7 +77,7 @@ class Command(ABC):
         self._execution_id = execution_id
         self._retry_count = retry_count
         self._retry_max_attempts = retry_limit
-        self._progress_update = None
+        self._progress_updates = {}
         self._complete = False
         self._run_id = None
 
@@ -108,7 +108,7 @@ class Command(ABC):
         output = {
             "cause": cause, 
             "error": error_code or "UNKNOWN_ERROR",
-            "progress": self._progress_update
+            "progress": self._progress_updates
         }
         output_json = json.dumps(output)
         logger.error(output_json)
@@ -124,7 +124,7 @@ class Command(ABC):
         if self._complete:
             return
 
-        output = output | {"progress": self._progress_update}
+        output = output | {"progress": self._progress_updates}
         output_json = json.dumps(output)
         logger.info(output_json)
         if self._run_id:
@@ -139,8 +139,9 @@ class Command(ABC):
         if self._complete:
             return
 
-        self._progress_update = progress.summary()
-        output = {"progress": self._progress_update}
+        self._progress_updates[progress.entity()] = progress.summary()
+
+        output = {"progress": self._progress_updates}
         output_json = json.dumps(output)
         if self._run_id:
             self._api.put(f"/runs/{self._run_id}", {

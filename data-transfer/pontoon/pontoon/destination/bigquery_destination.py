@@ -76,7 +76,7 @@ class BigQueryDestination(SQLDestination):
 
                 # configure progress tracking
                 progress = Progress(
-                    f"{ds.namespace}/{stream.schema_name}/{stream.name}",
+                    f"destination+bigquery://{ds.namespace}/{stream.schema_name}/{stream.name}",
                     total=ds.size(stream),
                     processed=0
                 )

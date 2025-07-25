@@ -86,7 +86,7 @@ class MemorySource(Source):
                 if r.data[1] >= self._mode.start and r.data[1] < self._mode.end]
 
         progress = Progress(
-            f"{self._namespace}/{stream.schema_name}/{stream.name}",
+            f"source+memory://{self._namespace}/{stream.schema_name}/{stream.name}",
             total=len(batch),
             processed=0
         )

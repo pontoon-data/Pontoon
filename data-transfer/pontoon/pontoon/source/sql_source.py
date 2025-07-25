@@ -298,7 +298,7 @@ class SQLSource(Source):
                 # configure progress tracking
                 total_count = conn.execute(text(count_query)).scalar_one()
                 progress = Progress(
-                    f"{self._namespace}/{stream.schema_name}/{stream.name}",
+                    f"source+sql://{self._namespace}/{stream.schema_name}/{stream.name}",
                     total=total_count,
                     processed=0
                 )

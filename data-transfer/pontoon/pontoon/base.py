@@ -265,7 +265,7 @@ class Progress:
     """ A class to represent progress of stream processing with rate tracking """
 
     def __init__(self, entity:str, total:int = 0, processed:int = 0):
-        self.entity = entity
+        self._entity = entity
         self.total = total
         self.processed = processed
         self.start_time = time.time()
@@ -328,9 +328,12 @@ class Progress:
             return remaining / self._rate
         return None
 
+    def entity(self):
+        return self._entity
+
     def summary(self):
         return {
-            "entity": self.entity,
+            "entity": self._entity,
             "processed": self.processed,
             "total": self.total,
             "percent": round(self.percent, 2),

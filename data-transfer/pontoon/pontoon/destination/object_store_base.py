@@ -115,7 +115,7 @@ class ObjectStoreBase(Destination):
 
             # configure progress tracking
             progress = Progress(
-                f"{ds.namespace}/{stream.schema_name}/{stream.name}",
+                f"destination+object://{ds.namespace}/{stream.schema_name}/{stream.name}",
                 total=ds.size(stream),
                 processed=0
             )
