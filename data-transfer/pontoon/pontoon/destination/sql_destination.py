@@ -151,7 +151,6 @@ class SQLDestination(Destination):
         self._ds = None
         self._config = config
         self._mode = config.get('mode')
-        self._progress_callback = None
         self._drop_after_complete = config.get('drop_after_complete', False)
         self._connection_info = config.get('connect')
 
@@ -197,21 +196,23 @@ class SQLDestination(Destination):
 
         self._ds = ds
 
-        # setup callbacks for progress updates
-        if callable(progress_callback):
-            self._progress_callback = progress_callback
-        else:
-            self._progress_callback = lambda *args, **kwargs: None
-
         # base connector only does full refresh right now
         if self._mode.type != Mode.FULL_REFRESH:
             raise Exception("SQLDestination (destination-sql) only supports FULL_REFRESH replication mode.")
 
-        total_records = 0
-
         with self._connect() as conn:
 
             for stream in ds.streams:
+
+                # configure progress tracking
+                progress = Progress(
+                    f"{ds.namespace}/{stream.schema_name}/{stream.name}",
+                    total=ds.size(stream),
+                    processed=0
+                )
+                if callable(progress_callback):
+                    progress.subscribe(progress_callback)
+
 
                 # create a table for the stream if it doesn't exist
                 table = SQLDestination.create_table_if_not_exists(conn, stream)
@@ -225,22 +226,17 @@ class SQLDestination(Destination):
                 for record in ds.read(stream):
                     batch.append(record)
                     if len(batch) == self._chunk_size:
-                        total_records += self._chunk_size
                         self._write_batch(conn, table, stream, batch)
-                        self._progress_callback(Progress(-1, total_records))
+                        progress.update(self._chunk_size, increment=True)
                         batch = []
                 
                 if batch:
-                    total_records += len(batch)
                     self._write_batch(conn, table, stream, batch)
-                    self._progress_callback(Progress(-1, total_records))
+                    progress.update(len(batch), increment=True)
                 
                 # drop tables after load?
                 if self._drop_after_complete == True:
                     table.drop(conn)
-        
-        # final progress update
-        self._progress_callback(Progress(total_records, 0))
 
     def close(self):
         pass

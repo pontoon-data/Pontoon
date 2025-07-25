@@ -70,18 +70,19 @@ class BigQueryDestination(SQLDestination):
         # Write a dataset to the destination database 
         self._ds = ds
 
-        # setup callbacks for progress updates
-        if callable(progress_callback):
-            self._progress_callback = progress_callback
-        else:
-            self._progress_callback = lambda *args, **kwargs: None
-
         with self._connect() as conn:
 
             for stream in ds.streams:
 
-                # initial progress
-                self._progress_callback(Progress(-1, 0))
+                # configure progress tracking
+                progress = Progress(
+                    f"{ds.namespace}/{stream.schema_name}/{stream.name}",
+                    total=ds.size(stream),
+                    processed=0
+                )
+                if callable(progress_callback):
+                    progress.subscribe(progress_callback)
+
 
                 # staging and target table names
                 target_table_name = f"{stream.schema_name}.{stream.name}"
@@ -98,15 +99,19 @@ class BigQueryDestination(SQLDestination):
                         self._ds.meta.get('batch_id')
                     )
                 )
+
+                progress.update("Running LOAD from GCS")
                 with conn.begin():
                     conn.execute(text(load_sql))
 
                 create_target_sql = BigQuerySQLUtil.create_table_if_not_exists(stage_table_name, target_table_name)
+                progress.update("Ensuring target table exists")
                 with conn.begin():
                     conn.execute(text(create_target_sql))
 
                 # delete records depending on sync mode
                 if self._mode.type == Mode.FULL_REFRESH:
+                    progress.update("Truncating target table")
                     with conn.begin():
                         conn.execute(text(f"DELETE FROM {target_table_name} WHERE 1=1"))
 
@@ -118,6 +123,7 @@ class BigQueryDestination(SQLDestination):
                     stream.primary_field
                 )
 
+                progress.update("Merging data into target table")
                 with conn.begin(): 
                     conn.execute(text(merge_sql))
                     
@@ -127,9 +133,7 @@ class BigQueryDestination(SQLDestination):
                 if self._drop_after_complete == True:
                     SQLDestination.drop_table(conn, target_table_name)
                     
-
-        # final progress update
-        self._progress_callback(Progress(1, 0))
+                progress.update(ds.size(stream))
 
     
     def close(self):

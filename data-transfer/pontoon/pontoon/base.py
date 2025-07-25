@@ -21,6 +21,9 @@ class Namespace:
     """ A class to represent a namespace """
     def __init__(self, name:str):
         self.name = name
+    
+    def __str__(self):
+        return self.name
 
 
 class Record:
@@ -241,6 +244,10 @@ class Dataset:
         
         return self._cache.read(stream)
 
+    
+    def size(self, stream:Stream) -> int:
+        return self._cache.size(stream)
+
 
     def rename_stream(self, stream_name:str, schema_name:str, new_name:str, new_schema:str):
         for stream in self.streams:
@@ -263,6 +270,7 @@ class Progress:
         self.start_time = time.time()
         self.last_update_time = self.start_time
         self.last_processed = processed
+        self.last_message = ""
         self._subscribers = []
         self._rate = 0.0
         self.percent = 0.0
@@ -272,12 +280,14 @@ class Progress:
         for handler in self._subscribers:
             hander(self)
 
-    def update(self, processed: int, increment: bool = False):
+    def update(self, processed: int, increment: bool = False, message: str = ""):
         now = time.time()
         if increment:
             self.processed += processed
         else:
             self.processed = processed
+
+        self.last_message = message
 
         # Update rate (records per second)
         elapsed = now - self.last_update_time
@@ -297,6 +307,10 @@ class Progress:
         self._notify()
 
         return self
+
+    def update(self, message: str):
+        self.update(0, increment=True, message)
+
 
     def subscribe(self, handler):
         self._subscribers.append(handler)
@@ -321,6 +335,7 @@ class Progress:
             "percent": round(self.percent, 2),
             "rate_rps": round(self._rate, 2),
             "eta_seconds": round(self.eta(), 2) if self.eta() is not None else None,
+            "message": self.last_message,
         }
 
 

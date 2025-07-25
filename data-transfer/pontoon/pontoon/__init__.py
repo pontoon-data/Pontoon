@@ -12,6 +12,7 @@ from pontoon.destination.snowflake_storage_destination import SnowflakeStorageDe
 from pontoon.destination.snowflake_destination import SnowflakeDestination
 from pontoon.destination.postgres_destination import PostgresDestination
 from pontoon.destination.dynamic import create_multi_destination
+from pontoon.destination.integrity import Integrity
 
 
 # Make these available as top level imports

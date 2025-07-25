@@ -98,7 +98,6 @@ class SQLSource(Source):
     def __init__(self, config, cache_implementation, cache_config={}):
         self._config = config
         self._streams = []
-        self._progress_callback = None
 
         connect = config.get('connect')
 
