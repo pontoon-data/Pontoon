@@ -45,11 +45,6 @@ class MemorySource(Source):
     def read(self, progress_callback=None) -> Dataset:
         # read some static records from memory
         # could be extended to take options via config and generate streams/records dynamically
-        
-        if callable(progress_callback):
-            self._progress_callback = progress_callback
-        else:
-            self._progress_callback = lambda *args, **kwargs: None
 
         stream = Stream(
             name='pontoon_transfer_test',
@@ -90,9 +85,17 @@ class MemorySource(Source):
             batch = [r for r in batch \
                 if r.data[1] >= self._mode.start and r.data[1] < self._mode.end]
 
+        progress = Progress(
+            f"{self._namespace}/{stream.schema_name}/{stream.name}",
+            total=len(batch),
+            processed=0
+        )
+        if callable(progress_callback):
+            progress.subscribe(progress_callback)
+
         self._cache.write(stream, batch)
 
-        self._progress_callback(Progress(len(batch), 0))
+        progress.update(len(batch))
 
         return Dataset(
             self._namespace, 

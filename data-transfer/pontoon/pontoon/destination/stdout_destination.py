@@ -1,5 +1,5 @@
 from pontoon.base import Destination, Dataset, Progress
-
+from pontoon.destination.integrity import MockIntegrity
 
 class StdoutDestination(Destination):
     """ A Destination implementation that writes records to stdout for debugging """
@@ -8,6 +8,9 @@ class StdoutDestination(Destination):
         self._config = config
         self._limit = config.get('connect', {}).get('limit', 100)
 
+    def integrity(self):
+        return MockIntegrity()
+    
     def write(self, ds:Dataset, progress_callback=None):
 
         print(ds.namespace.name)

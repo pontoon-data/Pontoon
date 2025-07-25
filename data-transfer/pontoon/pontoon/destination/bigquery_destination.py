@@ -100,18 +100,18 @@ class BigQueryDestination(SQLDestination):
                     )
                 )
 
-                progress.update("Running LOAD from GCS")
+                progress.message("Running LOAD from GCS")
                 with conn.begin():
                     conn.execute(text(load_sql))
 
                 create_target_sql = BigQuerySQLUtil.create_table_if_not_exists(stage_table_name, target_table_name)
-                progress.update("Ensuring target table exists")
+                progress.message("Ensuring target table exists")
                 with conn.begin():
                     conn.execute(text(create_target_sql))
 
                 # delete records depending on sync mode
                 if self._mode.type == Mode.FULL_REFRESH:
-                    progress.update("Truncating target table")
+                    progress.message("Truncating target table")
                     with conn.begin():
                         conn.execute(text(f"DELETE FROM {target_table_name} WHERE 1=1"))
 
@@ -123,7 +123,7 @@ class BigQueryDestination(SQLDestination):
                     stream.primary_field
                 )
 
-                progress.update("Merging data into target table")
+                progress.message("Merging data into target table")
                 with conn.begin(): 
                     conn.execute(text(merge_sql))
                     

@@ -234,19 +234,20 @@ class Dataset:
         # A DataSet is backed by a cache implementation 
         self._cache = cache
 
-    def read(self, stream:Stream) -> Generator[Record, None, None]:
-        
+    def _resolve_stream_name(self, stream:Stream) -> Stream:
         # has the stream been renamed?
         if(stream.name, stream.schema_name) in self._rename_map:
             old_name, old_schema_name = self._rename_map[(stream.name, stream.schema_name)]
-            old_stream = Stream(old_name, old_schema_name, stream.schema)
-            return self._cache.read(old_stream)
-        
-        return self._cache.read(stream)
+            return Stream(old_name, old_schema_name, stream.schema)
+        return stream
+
+    
+    def read(self, stream:Stream) -> Generator[Record, None, None]:
+        return self._cache.read(self._resolve_stream_name(stream))
 
     
     def size(self, stream:Stream) -> int:
-        return self._cache.size(stream)
+        return self._cache.size(self._resolve_stream_name(stream))
 
 
     def rename_stream(self, stream_name:str, schema_name:str, new_name:str, new_schema:str):
@@ -278,9 +279,9 @@ class Progress:
 
     def _notify(self):
         for handler in self._subscribers:
-            hander(self)
+            handler(self)
 
-    def update(self, processed: int, increment: bool = False, message: str = ""):
+    def update(self, processed:int, increment:bool = False, message:str = ""):
         now = time.time()
         if increment:
             self.processed += processed
@@ -308,8 +309,8 @@ class Progress:
 
         return self
 
-    def update(self, message: str):
-        self.update(0, increment=True, message)
+    def message(self, message: str):
+        self.update(0, increment=True, message=message)
 
 
     def subscribe(self, handler):
@@ -395,6 +396,18 @@ class Mode:
         return Mode._DELTA[period]
 
 
+class Integrity(ABC):
+    """ Abstract base class to represent an integrity checker """
+    
+    @abstractmethod
+    def __init__(self):
+        pass
+    
+    @abstractmethod
+    def check_batch_volume(self, ds:Dataset):
+        pass
+
+
 class Source(ABC):
     """ Abstract base class to represent a data source connector """
 
@@ -428,6 +441,10 @@ class Destination(ABC):
 
     @abstractmethod
     def write(self, ds: Dataset, progress_callback=None):
+        pass
+
+    @abstractmethod
+    def integrity(self) -> Integrity:
         pass
     
     @abstractmethod

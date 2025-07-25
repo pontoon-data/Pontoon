@@ -6,6 +6,7 @@ from snowflake.sqlalchemy import TIMESTAMP_LTZ, TIMESTAMP_NTZ, TIMESTAMP_TZ
 from sqlalchemy.orm import sessionmaker
 
 from pontoon.base import Destination, Dataset, Stream, Record, Mode, Progress
+from pontoon.destination.integrity import SQLIntegrity
 
 
 class SQLDestination(Destination):
@@ -189,6 +190,10 @@ class SQLDestination(Destination):
     def _write_batch(self, conn, table, stream:Stream, batch:List[Record]):
         # write a batch of records to the database
         conn.execute(insert(table), self._batch_to_rows(stream, batch))
+
+    
+    def integrity(self):
+        return SQLIntegrity(self._engine)
 
     
     def write(self, ds:Dataset, progress_callback = None):

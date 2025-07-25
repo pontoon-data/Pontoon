@@ -275,6 +275,9 @@ class SQLSource(Source):
                     schema=Stream.build_schema(columns)
                 )
 
+                count_query = SQLUtil.build_select_query(stream, self._mode, count=True) 
+                select_query = SQLUtil.build_select_query(stream, self._mode)
+
                 # ignore any stream fields?
                 if stream_config.get('drop_fields'):
                     for field in stream_config.get('drop_fields'):
@@ -291,9 +294,6 @@ class SQLSource(Source):
                     stream.with_last_synced_at(self._sync_time)
 
                 self._streams.append(stream)
-
-                count_query = SQLUtil.build_select_query(stream, self._mode, count=True) 
-                select_query = SQLUtil.build_select_query(stream, self._mode)
 
                 # configure progress tracking
                 total_count = conn.execute(text(count_query)).scalar_one()

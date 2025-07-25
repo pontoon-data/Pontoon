@@ -14,7 +14,7 @@ from pathlib import Path
 from pontoon import get_source, get_destination, \
                     get_source_by_vendor, get_destination_by_vendor, \
                     logger, configure_logging, \
-                    Integrity, Progress, Mode, SqliteCache, MemoryCache
+                    Progress, Mode, SqliteCache, MemoryCache
 
 
 
@@ -77,7 +77,7 @@ class Command(ABC):
         self._execution_id = execution_id
         self._retry_count = retry_count
         self._retry_max_attempts = retry_limit
-        self._progress_updates = []
+        self._progress_update = None
         self._complete = False
         self._run_id = None
 
@@ -108,7 +108,7 @@ class Command(ABC):
         output = {
             "cause": cause, 
             "error": error_code or "UNKNOWN_ERROR",
-            "progress": self._progress_updates
+            "progress": self._progress_update
         }
         output_json = json.dumps(output)
         logger.error(output_json)
@@ -124,7 +124,8 @@ class Command(ABC):
         if self._complete:
             return
 
-        output_json = json.dumps(output | {"progress": self._progress_updates})
+        output = output | {"progress": self._progress_update}
+        output_json = json.dumps(output)
         logger.info(output_json)
         if self._run_id:
             self._api.put(f"/runs/{self._run_id}", {
@@ -138,8 +139,9 @@ class Command(ABC):
         if self._complete:
             return
 
-        self._progress_updates.append(progress.summary())
-        output_json = json.dumps({"progress": self._progress_updates})
+        self._progress_update = progress.summary()
+        output = {"progress": self._progress_update}
+        output_json = json.dumps(output)
         if self._run_id:
             self._api.put(f"/runs/{self._run_id}", {
                 'status': 'RUNNING',
@@ -427,8 +429,9 @@ class TransferCommand(Command):
                 # clean up source caches
                 self._unlink_all(source_caches)
 
-                # check batch volume matches
-                Integrity(destination).check_batch_volume(ds)
+                # integrity checks
+                if self._drop_after_complete == False:
+                    destination.integrity().check_batch_volume(ds)
 
             except Exception as e:
                 self._unlink_all(source_caches)
