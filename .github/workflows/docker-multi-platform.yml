@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - master
+      - docker-build-github-action
     tags:
       - "v*.*.*"
 
@@ -12,16 +13,29 @@ env:
   IMAGE_VERSION: ${{ github.ref_name }}
 
 jobs:
-  build:
+  set-matrix:
     runs-on: ubuntu-latest
-    permissions:
-      packages: write
+    outputs:
+      matrix: ${{ steps.set-matrix.outputs.matrix }}
+    steps:
+      # Only run the arm64 (mac m1) build on tagged releases, since it takes so long to run
+      - id: set-matrix
+        run: |
+          if [[ "${GITHUB_REF_TYPE}" == "tag" ]]; then
+            echo 'matrix=["linux/amd64","linux/arm64"]' >> $GITHUB_OUTPUT
+          elif [[ "${GITHUB_REF_TYPE}" == "branch" && ("${GITHUB_REF_NAME}" == "master" || "${GITHUB_REF_NAME}" == "docker-build-github-action") ]]; then
+            echo 'matrix=["linux/amd64"]' >> $GITHUB_OUTPUT
+          else
+            echo "ERROR: Unrecognized ref type or branch. Ref type: ${GITHUB_REF_TYPE}, Ref name: ${GITHUB_REF_NAME}" >&2
+            exit 1
+          fi
+
+  build:
+    needs: set-matrix
+    runs-on: ubuntu-latest
     strategy:
-      fail-fast: false
       matrix:
-        platform:
-          - linux/amd64
-          - linux/arm64
+        platform: ${{ fromJson(needs.set-matrix.outputs.matrix) }}
     steps:
       - name: Prepare
         run: |
