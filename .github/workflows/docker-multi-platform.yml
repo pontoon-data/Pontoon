@@ -5,6 +5,7 @@ on:
     branches:
       - master
       - docker-build-github-action
+
     tags:
       - "v*.*.*"
 
