@@ -12,16 +12,31 @@ env:
   IMAGE_VERSION: ${{ github.ref_name }}
 
 jobs:
+  set-matrix:
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.set-matrix.outputs.matrix }}
+    steps:
+      # Only run the arm64 (mac m1) build on tagged releases, since it takes so long to run
+      - id: set-matrix
+        run: |
+          if [[ "${GITHUB_REF_TYPE}" == "tag" ]]; then
+            echo 'matrix=["linux/amd64","linux/arm64"]' >> $GITHUB_OUTPUT
+          elif [[ "${GITHUB_REF_TYPE}" == "branch" && "${GITHUB_REF_NAME}" == "master" ]]; then
+            echo 'matrix=["linux/amd64"]' >> $GITHUB_OUTPUT
+          else
+            echo "ERROR: Unrecognized ref type or branch. Ref type: ${GITHUB_REF_TYPE}, Ref name: ${GITHUB_REF_NAME}" >&2
+            exit 1
+          fi
+
   build:
+    needs: set-matrix
     runs-on: ubuntu-latest
     permissions:
       packages: write
     strategy:
-      fail-fast: false
       matrix:
-        platform:
-          - linux/amd64
-          - linux/arm64
+        platform: ${{ fromJson(needs.set-matrix.outputs.matrix) }}
     steps:
       - name: Prepare
         run: |
@@ -69,8 +84,8 @@ jobs:
           file: web-app/pontoon/Dockerfile
           platforms: ${{ matrix.platform }}
           labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          cache-from: type=gha,scope=pontoon-frontend
+          cache-to: type=gha,mode=max,scope=pontoon-frontend
           outputs: type=image,name=${{ env.REGISTRY }}/pontoon-frontend,push-by-digest=true,name-canonical=true,push=true
 
       # Build and push api
@@ -82,8 +97,8 @@ jobs:
           file: api/Dockerfile
           platforms: ${{ matrix.platform }}
           labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          cache-from: type=gha,scope=pontoon-api
+          cache-to: type=gha,mode=max,scope=pontoon-api
           outputs: type=image,name=${{ env.REGISTRY }}/pontoon-api,push-by-digest=true,name-canonical=true,push=true
 
       # Build and push worker
@@ -95,8 +110,8 @@ jobs:
           file: data-transfer/pontoon/Dockerfile
           platforms: ${{ matrix.platform }}
           labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          cache-from: type=gha,scope=pontoon-worker
+          cache-to: type=gha,mode=max,scope=pontoon-worker
           outputs: type=image,name=${{ env.REGISTRY }}/pontoon-worker,push-by-digest=true,name-canonical=true,push=true
 
       # Build and push beat
@@ -108,8 +123,8 @@ jobs:
           file: data-transfer/pontoon/Dockerfile
           platforms: ${{ matrix.platform }}
           labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          cache-from: type=gha,scope=pontoon-beat
+          cache-to: type=gha,mode=max,scope=pontoon-beat
           outputs: type=image,name=${{ env.REGISTRY }}/pontoon-beat,push-by-digest=true,name-canonical=true,push=true
 
       # Build and push unified image
@@ -121,8 +136,8 @@ jobs:
           file: Dockerfile
           platforms: ${{ matrix.platform }}
           labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          cache-from: type=gha,scope=pontoon-unified
+          cache-to: type=gha,mode=max,scope=pontoon-unified
           outputs: type=image,name=${{ env.REGISTRY }}/pontoon-unified,push-by-digest=true,name-canonical=true,push=true
           build-args: |
             API_IMAGE=${{ env.REGISTRY }}/pontoon-api@${{ steps.build-api.outputs.digest }}
