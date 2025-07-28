@@ -17,6 +17,8 @@ class StdoutDestination(Destination):
         print('---')
         for stream in ds.streams:
 
+            count = 0
+
             progress = Progress(
                 f"{ds.namespace}/{stream.schema_name}/{stream.name}",
                 total=ds.size(stream),
@@ -32,6 +34,7 @@ class StdoutDestination(Destination):
                 if count < self._limit:
                     print(f"    {record.data}")
                 
+                count += 1
                 progress.update(1, increment=True)
             print('===')
 

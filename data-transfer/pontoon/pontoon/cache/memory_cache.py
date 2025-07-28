@@ -20,7 +20,7 @@ class MemoryCache(Cache):
             yield record
 
     def size(self, stream:Stream) -> int:
-        return len(self._cache.get(stream.name), [])
+        return len(self._cache.get(stream.name, []))
 
     def close(self):
         self._cache = {}
