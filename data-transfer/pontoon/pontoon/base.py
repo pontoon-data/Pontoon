@@ -147,11 +147,6 @@ class Stream:
         extra_fields = self._extra_fields
         schema_names = self.schema.names
 
-        # Avoid rebuilding on each call
-        # if not hasattr(self, "_field_lookup"):
-        #     self._field_lookup = {name: i for i, name in enumerate(schema_names)}
-        # field_lookup = self._field_lookup
-
         field_lookup = {name: i for i, name in enumerate(schema_names)}
 
         # Pre-resolve functions for types to avoid repeated dict lookups
