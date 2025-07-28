@@ -37,7 +37,7 @@ def read_destination(destination_id: uuid.UUID, session=Depends(get_session)):
 
 @router.get("/runs/{transfer_id}", response_model=TransferRun.Model)
 def get_transfer_run(transfer_id: uuid.UUID, session=Depends(get_session)):
-    return Transfer.get_latest_transfer_run(session, transfer_id)
+    return TransferRun.get_latest_transfer_run(session, transfer_id)
 
 
 @router.post("/runs", response_model=TransferRun.Model)
