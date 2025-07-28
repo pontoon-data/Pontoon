@@ -1,6 +1,7 @@
 import os
 import json
 import glob
+import uuid
 import psutil
 from datetime import datetime, timezone
 from pontoon import configure_logging
@@ -18,31 +19,32 @@ for f in glob.glob("*_cache.db"):
 
 
 def read_progress_handler(progress:Progress):
-    if progress.total_records > 0:
-        print(f"Source read complete: {progress.total_records}")
-    else:
-        if progress.processed % 100000 == 0:
-            print(f"Reading source: read={progress.processed})")
+    print(f"{progress.entity()}: {progress.processed}/{progress.total} records ({progress.percent}%)")
 
 
 def write_progress_handler(progress:Progress):
-    if progress.total_records > 0:
-        print(f"Destination write complete: {progress.total_records}")
-    else:
-        if progress.processed % 100000 == 0:
-            print(f"Writing destination: wrote={progress.processed})")
+    print(f"{progress.entity()}: {progress.processed}/{progress.total} records ({progress.percent}%)")
 
 
 def get_memory_source():
     return get_source(
         get_source_by_vendor('memory'),
         config={
+            'with': {
+                'batch_id': True,
+                'last_sync': True
+            },
             'mode': Mode({
                 'type': Mode.INCREMENTAL,
                 'period': Mode.DAILY,
                 'start': datetime(2025, 1, 1, tzinfo=timezone.utc),
                 'end': datetime(2025, 1, 2, tzinfo=timezone.utc)
             })
+        },
+        cache_implementation = SqliteCache,
+        cache_config = {
+            'db': f"_memory_{uuid.uuid4()}_cache.db",
+            'chunk_size': 1024
         }
     )
 
@@ -55,9 +57,7 @@ mode_config = {
 }
 
 with_config = {
-    'checksum': True,
     'batch_id': True,
-    'version': '1.0.0',
     'last_sync': True
 }
 
@@ -76,6 +76,7 @@ postgresql_src = get_source(
     get_source_by_vendor('postgresql'),
     config = {
         'mode': Mode(mode_config),
+        'with': with_config,
         'connect': {
             'auth_type': 'basic',
             'vendor_type': 'postgresql',
@@ -105,6 +106,7 @@ redshift_src = get_source(
     get_source_by_vendor('redshift'),
     config = {
         'mode': Mode(mode_config),
+        'with': with_config,
         'connect': {
             'auth_type': 'basic',
             'vendor_type': 'redshift',
@@ -134,6 +136,7 @@ bigquery_src = get_source(
     get_source_by_vendor('bigquery'),
     config = {
         'mode': Mode(mode_config),
+        'with': with_config,
         'connect': {
             'auth_type': 'service_account',
             'vendor_type': 'bigquery',
@@ -160,6 +163,7 @@ snowflake_src = get_source(
     get_source_by_vendor('snowflake'),
     config = {
         'mode': Mode(mode_config),
+        'with': with_config,
         'connect': {
             'auth_type': 'access_token',
             'vendor_type': 'snowflake',
@@ -241,6 +245,7 @@ bigquery_dest = get_destination(
             'vendor_type': 'bigquery',
             'gcs_bucket_name': os.environ['GCS_BUCKET'],
             'gcs_bucket_path': 'pontoon',
+            'project_id': os.environ['BQ_PROJECT_ID'],
             'service_account': open(os.environ['GCP_SERVICE_ACCOUNT_FILE']).read(),
             'target_schema': 'target'
         }
@@ -299,17 +304,21 @@ class TestCoreConnectors:
     def test_postgres_destination(self):
         ds = get_memory_source().read(progress_callback=read_progress_handler)
         postgresql_dest.write(ds, progress_callback=write_progress_handler)
+        postgresql_dest.integrity().check_batch_volume(ds)
     
     def test_redshift_destination(self):
         ds = get_memory_source().read(progress_callback=read_progress_handler)
         redshift_dest.write(ds, progress_callback=write_progress_handler)
+        redshift_dest.integrity().check_batch_volume(ds)
     
     def test_bigquery_destination(self):
         ds = get_memory_source().read(progress_callback=read_progress_handler)
         bigquery_dest.write(ds, progress_callback=write_progress_handler)
+        bigquery_dest.integrity().check_batch_volume(ds)
     
     def test_snowflake_destination(self):
         ds = get_memory_source().read(progress_callback=read_progress_handler)
         snowflake_dest.write(ds, progress_callback=write_progress_handler)
+        snowflake_dest.integrity().check_batch_volume(ds)
 
 

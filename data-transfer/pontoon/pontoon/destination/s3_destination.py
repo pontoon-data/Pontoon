@@ -3,6 +3,7 @@ from typing import List, Dict, Any
 import boto3
 from pontoon.base import Namespace, Destination, Stream, Dataset, Record, Progress
 from pontoon.destination import ObjectStoreBase
+from pontoon.destination.integrity import S3Integrity
 
 
 class S3Config:
@@ -75,4 +76,6 @@ class S3Destination(ObjectStoreBase):
         # clean up
         os.remove(parquet_file_path)
    
-    
+
+    def integrity(self):
+        return S3Integrity(self._get_s3_client())    

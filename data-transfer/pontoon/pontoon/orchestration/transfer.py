@@ -77,6 +77,8 @@ class Command(ABC):
         self._execution_id = execution_id
         self._retry_count = retry_count
         self._retry_max_attempts = retry_limit
+        self._progress_updates = {}
+        self._complete = False
         self._run_id = None
 
         if ':' in self._execution_id:
@@ -99,8 +101,15 @@ class Command(ABC):
         self._run_id = res['transfer_run_id']
     
 
-    def _failure(self, cause=None, error_code=None):
-        output = {"cause": cause, "error": error_code or 'UNKNOWN_ERROR'}
+    def _failure(self, cause:str=None, error_code:str=None):
+        if self._complete:
+            return
+
+        output = {
+            "cause": cause, 
+            "error": error_code or "UNKNOWN_ERROR",
+            "progress": self._progress_updates
+        }
         output_json = json.dumps(output)
         logger.error(output_json)
         if self._run_id:
@@ -108,15 +117,35 @@ class Command(ABC):
                 'status': 'FAILURE',
                 'output': output
             })
+        self._complete = True
         return output_json
     
+    def _success(self, output:dict=None):
+        if self._complete:
+            return
 
-    def _success(self, output=None):
+        output = output | {"progress": self._progress_updates}
         output_json = json.dumps(output)
         logger.info(output_json)
         if self._run_id:
             self._api.put(f"/runs/{self._run_id}", {
                 'status': 'SUCCESS',
+                'output': output
+            })
+        self._complete = True
+        return output_json
+
+    def _progress(self, progress:Progress):
+        if self._complete:
+            return
+
+        self._progress_updates[progress.entity()] = progress.summary()
+
+        output = {"progress": self._progress_updates}
+        output_json = json.dumps(output)
+        if self._run_id:
+            self._api.put(f"/runs/{self._run_id}", {
+                'status': 'RUNNING',
                 'output': output
             })
         return output_json
@@ -163,19 +192,11 @@ class TransferCommand(Command):
 
 
     def _read_progress_handler(self, progress:Progress):
-        if progress.total_records > 0:
-            print(f"Source read complete: {progress.total_records}")
-        else:
-            if progress.processed % 100000 == 0:
-                print(f"Reading source: read={progress.processed})")
+        self._progress(progress)
 
 
     def _write_progress_handler(self, progress:Progress):
-        if progress.total_records > 0:
-            print(f"Destination write complete: {progress.total_records}")
-        else:
-            if progress.processed % 100000 == 0:
-                print(f"Writing destination: wrote={progress.processed})")
+        self._progress(progress)
 
 
     def _unlink_all(self, paths):
@@ -408,6 +429,10 @@ class TransferCommand(Command):
             
                 # clean up source caches
                 self._unlink_all(source_caches)
+
+                # integrity checks
+                if self._drop_after_complete == False:
+                    destination.integrity().check_batch_volume(ds)
 
             except Exception as e:
                 self._unlink_all(source_caches)

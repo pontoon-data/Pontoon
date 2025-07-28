@@ -10,6 +10,7 @@ class MemorySource(Source):
         self._config = config
         self._streams = []
         self._mode = config.get('mode')
+        self._with = config.get('with', {})
         self._namespace = Namespace(config.get('connect', {}).get('namespace', 'memory'))
         self._dt = datetime.now(timezone.utc)
         self._batch_id = str(int(self._dt.timestamp()*1000))
@@ -45,11 +46,6 @@ class MemorySource(Source):
     def read(self, progress_callback=None) -> Dataset:
         # read some static records from memory
         # could be extended to take options via config and generate streams/records dynamically
-        
-        if callable(progress_callback):
-            self._progress_callback = progress_callback
-        else:
-            self._progress_callback = lambda *args, **kwargs: None
 
         stream = Stream(
             name='pontoon_transfer_test',
@@ -67,6 +63,16 @@ class MemorySource(Source):
                 ('score',int),
                 ('notes',str)])
         )
+
+        # add bookkeeping columns to stream if configured
+        if self._with.get('batch_id'):
+            stream.with_batch_id(self._batch_id)
+        if self._with.get('checksum'):
+            stream.with_checksum()
+        if self._with.get('version'):
+            stream.with_version(self._with.get('version'))
+        if self._with.get('last_sync'):
+            stream.with_last_synced_at(self._dt)
 
         self._streams.append(stream)
 
@@ -90,9 +96,17 @@ class MemorySource(Source):
             batch = [r for r in batch \
                 if r.data[1] >= self._mode.start and r.data[1] < self._mode.end]
 
+        progress = Progress(
+            f"source+memory://{self._namespace}/{stream.schema_name}/{stream.name}",
+            total=len(batch),
+            processed=0
+        )
+        if callable(progress_callback):
+            progress.subscribe(progress_callback)
+
         self._cache.write(stream, batch)
 
-        self._progress_callback(Progress(len(batch), 0))
+        progress.update(len(batch))
 
         return Dataset(
             self._namespace, 

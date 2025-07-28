@@ -63,18 +63,18 @@ class RedshiftDestination(SQLDestination):
         # Write a dataset to the destination database 
         self._ds = ds
 
-        # setup callbacks for progress updates
-        if callable(progress_callback):
-            self._progress_callback = progress_callback
-        else:
-            self._progress_callback = lambda *args, **kwargs: None
-
         with self._connect() as conn:
 
             for stream in ds.streams:
 
-                # initial progress
-                self._progress_callback(Progress(-1, 0))
+                # configure progress tracking
+                progress = Progress(
+                    f"destination+redshift://{ds.namespace}/{stream.schema_name}/{stream.name}",
+                    total=ds.size(stream),
+                    processed=0
+                )
+                if callable(progress_callback):
+                    progress.subscribe(progress_callback)
 
                 # create a table for the stream if it doesn't exist
                 table = SQLDestination.create_table_if_not_exists(conn, stream)
@@ -114,11 +114,13 @@ class RedshiftDestination(SQLDestination):
 
                 # create the staging table and load data into it
                 with conn.begin():
+                    progress.message("Copying records from S3")
                     conn.execute(text(create_stage_sql))
                     conn.execute(text(copy_sql))
                 
                 # upsert staging into target table
                 with conn.begin():
+                    progress.message("Upserting records into target table")
                     conn.execute(text(upsert_delete_sql))
                     conn.execute(text(upsert_insert_sql))
 
@@ -129,9 +131,7 @@ class RedshiftDestination(SQLDestination):
                 if self._drop_after_complete == True:
                     SQLDestination.drop_table(conn, target_table_name)
 
-
-        # final progress update
-        self._progress_callback(Progress(1, 0))
+                progress.update(ds.size(stream))
 
     
     def close(self):
