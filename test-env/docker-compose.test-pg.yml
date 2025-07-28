@@ -32,6 +32,7 @@ services:
       POSTGRES_PASSWORD: test
       POSTGRES_DB: destdb
     volumes:
+      - ./dest_base.sql:/docker-entrypoint-initdb.d/dest_base.sql
       - destination-pgdata:/var/lib/postgresql/data
     ports:
       - "5434:5432"
