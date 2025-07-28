@@ -4,8 +4,6 @@ from typing import Optional, List, Literal
 from pydantic import BaseModel
 from sqlmodel import SQLModel, Field, Column, JSON, select
 
-
-
 class Transfer:
 
     class Exception(Exception): pass

@@ -34,6 +34,17 @@ def search_transfers(
     return TransferRun.list(session, destination_id, offset, limit)
 
 
+@router.get("/{transfer_run_id}", response_model=TransferRun.Model)
+def get_transfer_run(
+    transfer_run_id: uuid.UUID,
+    session = Depends(get_session),
+):
+    transfer_run = TransferRun.get(session, transfer_run_id)
+    if not transfer_run:
+        raise HTTPException(status_code=404, detail="Transfer run not found")
+    return transfer_run
+
+
 @router.post("/{transfer_run_id}/rerun")
 def rerun_transfer(
         transfer_run_id:uuid.UUID,

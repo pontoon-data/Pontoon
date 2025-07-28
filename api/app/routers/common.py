@@ -38,7 +38,7 @@ def transfer_task_status(session, task_id:uuid.UUID, timeout:int=300) -> Task.Mo
     if transfer_id is None:
         raise HTTPException(status_code=400, detail="Invalid task")
         
-    transfer_run = TransferRun.get(session, transfer_id)
+    transfer_run = TransferRun.get_latest_transfer_run(session, transfer_id)
     if transfer_run is None:
         return task
     
