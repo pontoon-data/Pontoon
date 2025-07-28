@@ -1,0 +1,21 @@
+FROM python:3.11-slim
+
+# Set working directory
+WORKDIR /app
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    gcc \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install Python dependencies
+RUN pip install --no-cache-dir psycopg2-binary==2.9.9
+
+# Copy the mock data generator script
+COPY mock_data_generator.py .
+
+# Make the script executable
+RUN chmod +x mock_data_generator.py
+
+# Run the mock data generator
+CMD ["python", "mock_data_generator.py"] 
