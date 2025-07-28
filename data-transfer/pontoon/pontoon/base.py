@@ -8,7 +8,7 @@ import hashlib
 import json
 import time
 from uuid import UUID
-from datetime import datetime, date, time, timedelta, timezone
+from datetime import datetime, timedelta, timezone
 from decimal import Decimal
 from abc import ABC, abstractmethod
 from typing import List, Dict, Tuple, Generator, Any
@@ -50,8 +50,8 @@ class Stream:
         str: pa.string(),
         bool: pa.bool_(),
         bytes: pa.binary(),
-        date: pa.date32(),
-        time: pa.time64('us'),
+        datetime.date: pa.date32(),
+        datetime.time: pa.time64('us'),
         datetime: pa.timestamp('us', tz='UTC'),
         type(None): pa.null()  # NoneType corresponds to NULL
     }
@@ -63,8 +63,8 @@ class Stream:
         'TIMESTAMP_NTZ': datetime,
         'TIMESTAMP_LTZ': datetime,
         'TIMESTAMP_TZ': datetime,
-        'DATE': date,
-        'TIME': time
+        'DATE': datetime.date,
+        'TIME': datetime.time
     }
 
     def __init__(self, name:str, schema_name:str, schema:pa.Schema, primary_field:str=None, cursor_field:str=None, filters:Dict[str,Any]=None):
@@ -148,9 +148,11 @@ class Stream:
         schema_names = self.schema.names
 
         # Avoid rebuilding on each call
-        if not hasattr(self, "_field_lookup"):
-            self._field_lookup = {name: i for i, name in enumerate(schema_names)}
-        field_lookup = self._field_lookup
+        # if not hasattr(self, "_field_lookup"):
+        #     self._field_lookup = {name: i for i, name in enumerate(schema_names)}
+        # field_lookup = self._field_lookup
+
+        field_lookup = {name: i for i, name in enumerate(schema_names)}
 
         # Pre-resolve functions for types to avoid repeated dict lookups
         def convert(val):
