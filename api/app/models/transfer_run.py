@@ -41,7 +41,21 @@ class TransferRun:
 
 
     @staticmethod
-    def get(session, transfer_id:uuid.UUID, status:str = None) -> Model:
+    def get(session, transfer_run_id:uuid.UUID) -> Model:
+        stmt = (
+            select(TransferRun.Model)
+            .where(TransferRun.Model.transfer_run_id == transfer_run_id)
+        )
+        results = session.exec(stmt).all()
+        if len(results) == 1:
+            return results[0]
+        elif len(results) == 0:
+            raise TransferRun.Exception("Transfer Run not found")
+        else:
+            raise TransferRun.Exception(f"Multiple transfer runs found for id {transfer_run_id}")
+    
+    @staticmethod
+    def get_latest_transfer_run(session, transfer_id:uuid.UUID, status:str = None) -> Model:
         stmt = (
             select(TransferRun.Model)
             .where(TransferRun.Model.transfer_id == transfer_id)

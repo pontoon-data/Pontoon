@@ -245,6 +245,7 @@ const DestinationDetails = () => {
 
 const TransferTable = ({ schedule, id }) => {
   const theme = useTheme();
+  const router = useRouter();
 
   const [openSuccess, setOpenSuccess] = useState(false);
 
@@ -422,7 +423,25 @@ const TransferTable = ({ schedule, id }) => {
               const flatTransfers = flattenTransferRuns(transfers);
 
               return flatTransfers.map((transfer, idx) => (
-                <TableRow key={idx} hover={true} sx={{ cursor: "pointer" }}>
+                <TableRow
+                  key={idx}
+                  hover={true}
+                  sx={{
+                    cursor:
+                      transfer.transfer_run_id &&
+                      transfer.status !== "SCHEDULED"
+                        ? "pointer"
+                        : "default",
+                  }}
+                  onClick={() => {
+                    if (
+                      transfer.transfer_run_id &&
+                      transfer.status !== "SCHEDULED"
+                    ) {
+                      router.push(`/transfers/${transfer.transfer_run_id}`);
+                    }
+                  }}
+                >
                   <TableCell>
                     <Typography variant="subtitle2" fontWeight={600}>
                       {transfer.status == "RUNNING" && (
@@ -500,7 +519,10 @@ const TransferTable = ({ schedule, id }) => {
                         variant="outlined"
                         size="small"
                         disabled={false}
-                        onClick={() => rerunTransfer(transfer.transfer_run_id)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          rerunTransfer(transfer.transfer_run_id);
+                        }}
                       >
                         Re-run
                       </Button>
@@ -511,7 +533,10 @@ const TransferTable = ({ schedule, id }) => {
                         variant="outlined"
                         size="small"
                         disabled={false}
-                        onClick={() => runDestination(id)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          runDestination(id);
+                        }}
                       >
                         Run Now
                       </Button>
