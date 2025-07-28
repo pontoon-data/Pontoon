@@ -8,7 +8,7 @@ import hashlib
 import json
 import time
 from uuid import UUID
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, date, time, timedelta, timezone
 from decimal import Decimal
 from abc import ABC, abstractmethod
 from typing import List, Dict, Tuple, Generator, Any
@@ -50,6 +50,8 @@ class Stream:
         str: pa.string(),
         bool: pa.bool_(),
         bytes: pa.binary(),
+        date: pa.date32(),
+        time: pa.time64('us'),
         datetime: pa.timestamp('us', tz='UTC'),
         type(None): pa.null()  # NoneType corresponds to NULL
     }
@@ -58,7 +60,11 @@ class Stream:
     PY_CONVERSION_MAP = {
         UUID: str,
         Decimal: float,
-        'TIMESTAMP_NTZ': datetime
+        'TIMESTAMP_NTZ': datetime,
+        'TIMESTAMP_LTZ': datetime,
+        'TIMESTAMP_TZ': datetime,
+        'DATE': date,
+        'TIME': time
     }
 
     def __init__(self, name:str, schema_name:str, schema:pa.Schema, primary_field:str=None, cursor_field:str=None, filters:Dict[str,Any]=None):
