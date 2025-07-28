@@ -6,6 +6,7 @@ import boto3
 
 from pontoon.base import Destination, Stream, Dataset, Record, Progress
 from pontoon.destination.s3_destination import S3Destination, S3Config
+from pontoon.destination.integrity import SQLIntegrity
 
 
 class GlueDestination(Destination):
@@ -84,6 +85,11 @@ class GlueDestination(Destination):
         glue.delete_crawler(Name=crawler_name)
 
 
+    def integrity(self):
+        # TODO: should return a SQLIntegrity() configured with Athena
+        raise NotImplementedError("Glue Integrity checks not implemented")
+
+    
     def write(self, ds:Dataset, progress_callback=None):
         # Write a dataset to Glue
         self._ds = ds

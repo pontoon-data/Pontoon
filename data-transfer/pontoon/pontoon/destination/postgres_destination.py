@@ -118,16 +118,6 @@ class PostgresDestination(SQLDestination):
         # Write a dataset to the destination database 
         self._ds = ds
 
-        # setup callbacks for progress updates
-        if callable(progress_callback):
-            self._progress_callback = progress_callback
-        else:
-            self._progress_callback = lambda *args, **kwargs: None
-
-        
-        # initial progress
-        self._progress_callback(Progress(-1, 0))
-
         # optionally rename destination schema
         target_schema = self._config['connect'].get('target_schema')
         if target_schema: 
@@ -141,6 +131,15 @@ class PostgresDestination(SQLDestination):
 
         # sync each stream
         for stream in ds.streams:
+
+            # configure progress tracking
+            progress = Progress(
+                f"destination+postgresql://{ds.namespace}/{stream.schema_name}/{stream.name}",
+                total=ds.size(stream),
+                processed=0
+            )
+            if callable(progress_callback):
+                progress.subscribe(progress_callback)
 
             with self._connect() as conn:
                 # create target table for the stream if it doesn't exist
@@ -173,25 +172,24 @@ class PostgresDestination(SQLDestination):
             # load into the stage table
             # note: standard postgresql doesn't support copy from cloud storage
             batch = []
-            total_records = 0
             for record in ds.read(stream):
                 batch.append(record)
                 if len(batch) == self._chunk_size:
-                    total_records += self._chunk_size
                     self._write_batch(conn, stage_table_name, stream.schema.names, batch)
-                    self._progress_callback(Progress(-1, total_records))
+                    progress.update(self._chunk_size, increment=True)
                     batch = []
             
             if batch:
-                total_records += len(batch)
                 self._write_batch(conn, stage_table_name, stream.schema.names, batch)
-                self._progress_callback(Progress(-1, total_records))
+                progress.update(len(batch), increment=True)
+                
             
             conn.commit()
             
             with conn.cursor() as cur:
                 # delete all records from the table
                 if self._mode.type == Mode.FULL_REFRESH:
+                    progress.message("Truncating target table")
                     cur.execute(
                         sql.SQL("DELETE FROM {}.{}").format(
                             sql.Identifier(stream.schema_name),
@@ -200,6 +198,7 @@ class PostgresDestination(SQLDestination):
                     )
             
                 # upsert staging into target table
+                progress.message("Upserting records into target table")
                 cur.execute(upsert_sql)
 
                 # drop the staging table
@@ -215,12 +214,11 @@ class PostgresDestination(SQLDestination):
                             PostgresSQLUtil.drop_table(target_table_name)
                         )
 
+                progress.message("Load complete")
+
             conn.commit()
 
             conn.close()
-
-        # final progress update
-        self._progress_callback(Progress(1, 0))
 
     
     def close(self):
