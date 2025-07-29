@@ -103,8 +103,31 @@ class SqliteCache(Cache):
     
 
     def _rows_to_records(self, stream:Stream, rows):
-        # covert a sqlite row back into a record      
-        return [Record(list(row)) for row in rows]
+        # convert a sqlite row back into a record with proper type conversion
+        records = []
+        for row in rows:
+            converted_data = []
+            for i, value in enumerate(row):
+                # Get the expected type from the schema
+                expected_type = stream.schema.types[i]
+                
+                # Convert value based on expected type
+                if pa.types.is_boolean(expected_type) and isinstance(value, int):
+                    # Convert SQLite integer (0/1) back to boolean
+                    converted_data.append(bool(value))
+                elif pa.types.is_date(expected_type) and isinstance(value, str):
+                    # Convert date string back to date object
+                    converted_data.append(date.fromisoformat(value))
+                elif pa.types.is_timestamp(expected_type) and isinstance(value, str):
+                    # Convert datetime string back to datetime object
+                    converted_data.append(datetime.fromisoformat(value))
+                else:
+                    # Keep the value as-is for other types
+                    converted_data.append(value)
+            
+            records.append(Record(converted_data))
+        
+        return records
 
     
     def write(self, stream:Stream, records:List[Record]):

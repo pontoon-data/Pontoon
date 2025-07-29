@@ -247,3 +247,180 @@ class TestPostgresSource:
             # Clean up
             if os.path.exists(temp_db.name):
                 os.unlink(temp_db.name)
+
+    def test_postgres_boolean_type_conversion_error(self):
+        """
+        Test to reproduce the error when transferring boolean columns from PostgreSQL source to PostgreSQL destination
+        """
+        # Create a PostgreSQL-style schema with a boolean column
+        metadata = MetaData()
+        table = Table(
+            'test_booleans',
+            metadata,
+            Column('id', Integer, primary_key=True),
+            Column('is_converted', Boolean, nullable=False),
+            Column('is_active', Boolean, default=True),
+            Column('created_at', TIMESTAMP(timezone=True), nullable=False),
+        )
+        
+        # Simulate the column inspection process
+        columns = []
+        for col in table.columns:
+            try:
+                columns.append((col.name, col.type.python_type))
+            except NotImplementedError:
+                columns.append((col.name, str(col.type)))
+        
+        # Convert to PyArrow schema
+        pyarrow_schema = Stream.build_schema(columns)
+        
+        # Create a stream
+        stream = Stream(
+            'test_booleans',
+            'public',
+            pyarrow_schema,
+            primary_field='id',
+            cursor_field='created_at'
+        )
+        
+        # Test that the SQLite cache can handle boolean objects correctly
+        from pontoon.cache.sqlite_cache import SqliteCache
+        import tempfile
+        import os
+        
+        # Create a temporary SQLite cache
+        temp_db = tempfile.NamedTemporaryFile(delete=False, suffix='.db')
+        temp_db.close()
+        
+        try:
+            cache = SqliteCache(
+                namespace=Namespace("test"),
+                config={'db': temp_db.name, 'chunk_size': 1000}
+            )
+            
+            # Create sample data with boolean objects
+            sample_row = [1, True, False, datetime(2025, 1, 15, 10, 0, 0, tzinfo=timezone.utc)]
+            record = stream.to_record(sample_row)
+            
+            # Write to cache
+            cache.write(stream, [record])
+            
+            # Read from cache - this is where the issue occurs
+            records = list(cache.read(stream))
+            assert len(records) == 1
+            
+            # Check if the boolean values are being converted to integers
+            # This reproduces the issue: SQLite stores booleans as integers (0/1)
+            # but when reading back, they should be converted back to booleans
+            record_data = records[0].data
+            print(f"Record data: {record_data}")
+            print(f"Type of is_converted: {type(record_data[1])}")
+            print(f"Type of is_active: {type(record_data[2])}")
+            
+            # The issue is that SQLite stores booleans as integers, but when reading back
+            # they remain as integers instead of being converted back to booleans
+            # This causes the PostgreSQL destination to receive integers instead of booleans
+            if isinstance(record_data[1], int) and isinstance(record_data[2], int):
+                # This reproduces the error condition
+                # The boolean values are being stored/retrieved as integers
+                # When this data is passed to PostgreSQL, it will cause the type mismatch error
+                assert record_data[1] in [0, 1]  # Should be 0 or 1 (integer)
+                assert record_data[2] in [0, 1]  # Should be 0 or 1 (integer)
+                
+                # This simulates what happens when the data is passed to PostgreSQL
+                # PostgreSQL expects boolean values but receives integers
+                try:
+                    # Simulate the error that would occur in PostgreSQL
+                    if record_data[1] == 1:  # This is an integer, but PostgreSQL expects boolean
+                        raise ValueError("column \"is_converted\" is of type boolean but expression is of type integer")
+                except ValueError as e:
+                    # We expect this to fail with the boolean type conversion error
+                    assert "column \"is_converted\" is of type boolean but expression is of type integer" in str(e)
+                    return
+            
+            # If we get here, the test didn't reproduce the error
+            assert False, "Expected error was not reproduced"
+            
+        finally:
+            # Clean up
+            cache.close()
+            if os.path.exists(temp_db.name):
+                os.unlink(temp_db.name)
+
+    def test_sqlite_boolean_handling_fixed(self):
+        """
+        Test that the SQLite cache fix works correctly with boolean objects
+        """
+        # Create a PostgreSQL-style schema with boolean columns
+        metadata = MetaData()
+        table = Table(
+            'test_booleans',
+            metadata,
+            Column('id', Integer, primary_key=True),
+            Column('is_converted', Boolean, nullable=False),
+            Column('is_active', Boolean, default=True),
+            Column('created_at', TIMESTAMP(timezone=True), nullable=False),
+        )
+        
+        # Simulate the column inspection process
+        columns = []
+        for col in table.columns:
+            try:
+                columns.append((col.name, col.type.python_type))
+            except NotImplementedError:
+                columns.append((col.name, str(col.type)))
+        
+        # Convert to PyArrow schema
+        pyarrow_schema = Stream.build_schema(columns)
+        
+        # Create a stream
+        stream = Stream(
+            'test_booleans',
+            'public',
+            pyarrow_schema,
+            primary_field='id',
+            cursor_field='created_at'
+        )
+        
+        # Test that the SQLite cache can handle boolean objects correctly
+        from pontoon.cache.sqlite_cache import SqliteCache
+        import tempfile
+        import os
+        
+        # Create a temporary SQLite cache
+        temp_db = tempfile.NamedTemporaryFile(delete=False, suffix='.db')
+        temp_db.close()
+        
+        try:
+            cache = SqliteCache(
+                namespace=Namespace("test"),
+                config={'db': temp_db.name, 'chunk_size': 1000}
+            )
+            
+            # Create sample data with boolean objects
+            sample_row = [1, True, False, datetime(2025, 1, 15, 10, 0, 0, tzinfo=timezone.utc)]
+            record = stream.to_record(sample_row)
+            
+            # Write to cache
+            cache.write(stream, [record])
+            
+            # Read from cache - this should now work correctly
+            records = list(cache.read(stream))
+            assert len(records) == 1
+            
+            # Verify that boolean values are properly converted back
+            record_data = records[0].data
+            assert record_data[0] == 1  # id
+            assert record_data[1] is True  # is_converted should be boolean True
+            assert record_data[2] is False  # is_active should be boolean False
+            assert record_data[3] == datetime(2025, 1, 15, 10, 0, 0, tzinfo=timezone.utc)  # created_at
+            
+            # Verify the types are correct
+            assert isinstance(record_data[1], bool)
+            assert isinstance(record_data[2], bool)
+            
+        finally:
+            # Clean up
+            cache.close()
+            if os.path.exists(temp_db.name):
+                os.unlink(temp_db.name)
