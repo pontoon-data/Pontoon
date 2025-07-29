@@ -3,7 +3,7 @@ from datetime import datetime, timedelta, timezone, date
 import pyarrow as pa
 from pontoon import Stream, Mode, Namespace
 from pontoon.source.sql_source import SQLSource, SQLUtil
-from sqlalchemy import create_engine, MetaData, Table, Column, Integer, String, DateTime, Boolean, Float, Text, Date
+from sqlalchemy import create_engine, MetaData, Table, Column, Integer, String, DateTime, Boolean, Float, Text, Date, Numeric, inspect, text
 from sqlalchemy.dialects.postgresql import UUID, JSONB, TIMESTAMP
 
 
@@ -654,3 +654,170 @@ class TestPostgresSource:
         print("3. Schema/type conversion issues during query execution")
         print("4. Source table permissions or connection issues")
         print("5. Stream field dropping removes required columns")
+
+    def test_date_type_handling_fixed(self):
+        """
+        Test that the DATE type handling fix works correctly
+        """
+        from decimal import Decimal
+        from sqlalchemy import Numeric
+        
+        # Create a PostgreSQL-style schema with NUMERIC columns
+        metadata = MetaData()
+        table = Table(
+            'campaigns',
+            metadata,
+            Column('id', Integer, primary_key=True),
+            Column('customer_id', String(50), nullable=False),
+            Column('last_modified', TIMESTAMP(timezone=True), nullable=False),
+            Column('name', String(255), nullable=False),
+            Column('start_date', Date),
+            Column('end_date', Date),
+            Column('budget', Numeric(12, 2)),  # NUMERIC column
+            Column('channel', String(100)),
+            Column('status', String(50)),
+            Column('created_at', TIMESTAMP(timezone=True), nullable=False),
+            schema='pontoon_data'
+        )
+        
+        # Simulate the SQLSource column inspection process
+        columns = []
+        for col in table.columns:
+            try:
+                columns.append((col.name, col.type.python_type))
+            except NotImplementedError:
+                columns.append((col.name, str(col.type)))
+        
+        # Convert to PyArrow schema
+        pyarrow_schema = Stream.build_schema(columns)
+        
+        # Create a stream
+        stream = Stream(
+            'campaigns',
+            'pontoon_data',
+            pyarrow_schema,
+            primary_field='id',
+            cursor_field='created_at'
+        )
+        
+        # Test the schema compatibility with destination
+        from pontoon.destination.sql_destination import SQLDestination
+        
+        # Simulate the destination table that was created on the first sync
+        existing_table_columns = [
+            Column('id', Integer, primary_key=True),
+            Column('customer_id', String(50), nullable=False),
+            Column('last_modified', TIMESTAMP(timezone=True), nullable=False),
+            Column('name', String(255), nullable=False),
+            Column('start_date', Date),
+            Column('end_date', Date),
+            Column('budget', Numeric(12, 2)),  # Same type as source
+            Column('channel', String(100)),
+            Column('status', String(50)),
+            Column('created_at', TIMESTAMP(timezone=True), nullable=False),
+        ]
+        
+        # Convert existing table schema to PyArrow schema
+        existing_schema = SQLDestination.table_ddl_to_schema(existing_table_columns)
+        
+        # After the fix, this should be compatible
+        is_compatible = SQLDestination.schemas_compatible(stream.schema, existing_schema)
+        
+        # After the fix, this should be compatible
+        assert is_compatible, "Schemas should be compatible after DATE type fix"
+        
+        print("DATE type handling fix works correctly!")
+
+    def test_reproduce_real_schema_mismatch_error(self):
+        """
+        Test to reproduce the actual schema mismatch error that occurs in production
+        This simulates the real scenario where create_table_if_not_exists fails
+        """
+        from decimal import Decimal
+        from sqlalchemy import Numeric
+        
+        # Create a PostgreSQL-style schema with NUMERIC columns (like the campaigns table)
+        metadata = MetaData()
+        table = Table(
+            'campaigns',
+            metadata,
+            Column('id', Integer, primary_key=True),
+            Column('customer_id', String(50), nullable=False),
+            Column('last_modified', TIMESTAMP(timezone=True), nullable=False),
+            Column('name', String(255), nullable=False),
+            Column('start_date', Date),
+            Column('end_date', Date),
+            Column('budget', Numeric(12, 2)),  # NUMERIC column
+            Column('channel', String(100)),
+            Column('status', String(50)),
+            Column('created_at', TIMESTAMP(timezone=True), nullable=False),
+            schema='pontoon_data'
+        )
+        
+        # Simulate the SQLSource column inspection process
+        columns = []
+        for col in table.columns:
+            try:
+                columns.append((col.name, col.type.python_type))
+            except NotImplementedError:
+                columns.append((col.name, str(col.type)))
+        
+        # Convert to PyArrow schema
+        pyarrow_schema = Stream.build_schema(columns)
+        
+        # Create a stream
+        stream = Stream(
+            'campaigns',
+            'pontoon_data',
+            pyarrow_schema,
+            primary_field='id',
+            cursor_field='created_at'
+        )
+        
+        # Test the schema compatibility with destination
+        from pontoon.destination.sql_destination import SQLDestination
+        
+        # Simulate what happens when the destination table is created using schema_to_table_ddl
+        # This is what happens in the first sync when the table is created
+        destination_columns = SQLDestination.schema_to_table_ddl(stream)
+        
+        print("=== First sync - Table creation ===")
+        print(f"Stream schema types: {[str(t) for t in stream.schema.types]}")
+        print(f"Destination columns created: {[col.name for col in destination_columns]}")
+        print(f"Destination column types: {[type(col.type).__name__ for col in destination_columns]}")
+        
+        # Now simulate what happens when the existing table is inspected in the second sync
+        # This is what happens when create_table_if_not_exists inspects the existing table
+        existing_schema = SQLDestination.table_ddl_to_schema(destination_columns)
+        
+        print("\n=== Second sync - Table inspection ===")
+        print(f"Stream schema types: {[str(t) for t in stream.schema.types]}")
+        print(f"Existing schema types: {[str(t) for t in existing_schema.types]}")
+        print(f"Stream schema names: {stream.schema.names}")
+        print(f"Existing schema names: {existing_schema.names}")
+        
+        # Check if the schemas are compatible
+        is_compatible = SQLDestination.schemas_compatible(stream.schema, existing_schema)
+        print(f"Schemas compatible: {is_compatible}")
+        
+        # If they're not compatible, this reproduces the error
+        if not is_compatible:
+            print("\n❌ SCHEMA MISMATCH DETECTED - This reproduces the production error!")
+            
+            # Let's identify which columns are causing the mismatch
+            stream_fields = {field.name: field.type for field in stream.schema}
+            existing_fields = {field.name: field.type for field in existing_schema}
+            
+            for col_name in stream_fields.keys():
+                if col_name in existing_fields:
+                    if stream_fields[col_name] != existing_fields[col_name]:
+                        print(f"Column '{col_name}' type mismatch:")
+                        print(f"  Source: {stream_fields[col_name]}")
+                        print(f"  Destination: {existing_fields[col_name]}")
+            
+            # This should raise the same error as in production
+            raise ValueError(f"Existing schema for stream campaigns does not match.")
+        else:
+            print("\n✅ Schemas are compatible - no error would occur")
+        
+        print("Real schema mismatch reproduction test completed!")

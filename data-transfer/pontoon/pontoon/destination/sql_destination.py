@@ -24,8 +24,8 @@ class SQLDestination(Destination):
         pa.binary(): String,  
         pa.bool_(): Boolean,
         pa.timestamp('us', tz='UTC'): DateTime(True),  
-        pa.date32(): DateTime,
-        pa.date64(): DateTime
+        pa.date32(): Date,
+        pa.date64(): Date,
     }
 
 
@@ -39,7 +39,7 @@ class SQLDestination(Destination):
         SmallInteger: pa.int64(),
         Numeric: pa.float64(),
         Boolean: pa.bool_(),
-        Date: pa.timestamp('us', tz='UTC'),
+        Date: pa.date32(),
         Time: pa.timestamp('us', tz='UTC'),
         DateTime: pa.timestamp('us', tz='UTC'),
     }

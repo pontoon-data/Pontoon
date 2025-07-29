@@ -53,17 +53,18 @@ def get_db_connection():
 def generate_mock_leads(count: int = 100) -> List[Dict[str, Any]]:
     """Generate mock leads data."""
     leads = []
+    created_at = datetime.now()
     for _ in range(count):
         lead = {
             'customer_id': random.choice(CUSTOMER_IDS),
-            'last_modified': datetime.now() - timedelta(days=random.randint(0, 365)),
+            'last_modified': created_at,
             'lead_source': random.choice(LEAD_SOURCES),
             'campaign_id': random.randint(1, 50),
             'lifecycle_stage': random.choice(LIFECYCLE_STAGES),
             'lead_status': random.choice(LEAD_STATUSES),
             'lead_score': random.randint(0, 100),
             'is_converted': random.choice([True, False]),
-            'created_at': datetime.now() - timedelta(days=random.randint(0, 730))
+            'created_at': created_at
         }
         leads.append(lead)
     return leads
@@ -71,20 +72,21 @@ def generate_mock_leads(count: int = 100) -> List[Dict[str, Any]]:
 def generate_mock_campaigns(count: int = 100) -> List[Dict[str, Any]]:
     """Generate mock campaigns data."""
     campaigns = []
+    created_at = datetime.now()
     for _ in range(count):
         start_date = datetime.now() - timedelta(days=random.randint(0, 365))
         end_date = start_date + timedelta(days=random.randint(30, 180))
         
         campaign = {
             'customer_id': random.choice(CUSTOMER_IDS),
-            'last_modified': datetime.now() - timedelta(days=random.randint(0, 365)),
+            'last_modified': created_at,
             'name': f"Campaign {random.randint(1000, 9999)} - {random.choice(['Q1', 'Q2', 'Q3', 'Q4'])} {random.randint(2022, 2024)}",
             'start_date': start_date.date(),
             'end_date': end_date.date(),
             'budget': round(random.uniform(1000, 50000), 2),
             'channel': random.choice(CAMPAIGN_CHANNELS),
             'status': random.choice(CAMPAIGN_STATUSES),
-            'created_at': start_date - timedelta(days=random.randint(1, 30))
+            'created_at': created_at
         }
         campaigns.append(campaign)
     return campaigns
@@ -92,19 +94,20 @@ def generate_mock_campaigns(count: int = 100) -> List[Dict[str, Any]]:
 def generate_mock_attribution(count: int = 100) -> List[Dict[str, Any]]:
     """Generate mock multitouch attribution data."""
     attributions = []
+    created_at = datetime.now()
     for _ in range(count):
         touchpoint_time = datetime.now() - timedelta(days=random.randint(0, 365))
         
         attribution = {
             'customer_id': random.choice(CUSTOMER_IDS),
-            'last_modified': datetime.now() - timedelta(days=random.randint(0, 365)),
+            'last_modified': created_at,
             'lead_id': random.randint(1, 1000),
             'campaign_id': random.randint(1, 50),
             'touchpoint_order': random.randint(1, 10),
             'touchpoint_time': touchpoint_time,
             'attribution_model': random.choice(ATTRIBUTION_MODELS),
             'attribution_value': round(random.uniform(0.05, 1.0), 2),
-            'created_at': touchpoint_time + timedelta(minutes=random.randint(1, 60))
+            'created_at': created_at
         }
         attributions.append(attribution)
     return attributions
