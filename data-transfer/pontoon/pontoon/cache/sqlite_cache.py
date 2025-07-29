@@ -1,6 +1,6 @@
 import sqlite3
 import pyarrow as pa
-from datetime import datetime
+from datetime import datetime, date
 from typing import List, Dict, Tuple, Generator, Any
 from pontoon.base import Cache, Namespace, Stream, Record
 
@@ -11,9 +11,17 @@ def adapt_datetime_iso(val):
 def convert_datetime(val):
     return datetime.fromisoformat(val.decode())
 
+def adapt_date_iso(val):
+    return val.isoformat()
+
+def convert_date(val):
+    return date.fromisoformat(val.decode())
+
 
 sqlite3.register_adapter(datetime, adapt_datetime_iso)
 sqlite3.register_converter("datetime", convert_datetime)
+sqlite3.register_adapter(date, adapt_date_iso)
+sqlite3.register_converter("date", convert_date)
 
 
 class SqliteCache(Cache):
@@ -48,7 +56,9 @@ class SqliteCache(Cache):
             return "BLOB"
         elif pa.types.is_boolean(arrow_type):
             return "INTEGER"
-        elif pa.types.is_date(arrow_type) or pa.types.is_timestamp(arrow_type):
+        elif pa.types.is_date(arrow_type):
+            return "date"
+        elif pa.types.is_timestamp(arrow_type):
             return "datetime"
         elif pa.types.is_decimal(arrow_type):
             return "TEXT"
