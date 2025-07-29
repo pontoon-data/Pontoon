@@ -8,7 +8,7 @@ import hashlib
 import json
 import time
 from uuid import UUID
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timedelta, timezone, date
 from decimal import Decimal
 from abc import ABC, abstractmethod
 from typing import List, Dict, Tuple, Generator, Any
@@ -50,7 +50,7 @@ class Stream:
         str: pa.string(),
         bool: pa.bool_(),
         bytes: pa.binary(),
-        datetime.date: pa.date32(),
+        date: pa.date32(),
         datetime.time: pa.time64('us'),
         datetime: pa.timestamp('us', tz='UTC'),
         type(None): pa.null()  # NoneType corresponds to NULL
@@ -60,10 +60,12 @@ class Stream:
     PY_CONVERSION_MAP = {
         UUID: str,
         Decimal: float,
+        dict: str,  # JSONB and other dict-like types get converted to string
+        date: date,  # Date type maps to itself (already in PY_TO_PYARROW_MAP)
         'TIMESTAMP_NTZ': datetime,
         'TIMESTAMP_LTZ': datetime,
         'TIMESTAMP_TZ': datetime,
-        'DATE': datetime.date,
+        'DATE': date,  # String fallback for DATE type
         'TIME': datetime.time
     }
 
@@ -154,6 +156,8 @@ class Stream:
             py_type = type(val)
             if py_type is datetime:
                 return val.astimezone(timezone.utc)
+            elif py_type is date:
+                return val  # date objects should be passed through as-is
             fn = type_map.get(py_type)
             return fn(val) if fn else val
 

@@ -11,13 +11,20 @@ services:
     environment:
       POSTGRES_USER: source
       POSTGRES_PASSWORD: test
-      POSTGRES_DB: sourcedb
+      POSTGRES_DB: analytics
     volumes:
+      - ./source_base.sql:/docker-entrypoint-initdb.d/source_base.sql
       - source-pgdata:/var/lib/postgresql/data
     ports:
       - "5433:5432"
     networks:
       - source_net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U source -d analytics"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
   destination-postgres:
     image: postgres:17.5-alpine
     environment:
@@ -25,11 +32,28 @@ services:
       POSTGRES_PASSWORD: test
       POSTGRES_DB: destdb
     volumes:
+      - ./dest_base.sql:/docker-entrypoint-initdb.d/dest_base.sql
       - destination-pgdata:/var/lib/postgresql/data
     ports:
       - "5434:5432"
     networks:
       - destination_net
+  mock-data-generator:
+    build:
+      context: .
+      dockerfile: Dockerfile.mock-generator
+    environment:
+      DB_HOST: source-postgres
+      DB_PORT: 5432
+      DB_NAME: analytics
+      DB_USER: source
+      DB_PASSWORD: test
+    depends_on:
+      source-postgres:
+        condition: service_healthy
+    networks:
+      - source_net
+    restart: unless-stopped
 
 volumes:
   source-pgdata:

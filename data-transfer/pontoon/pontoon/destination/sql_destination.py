@@ -24,8 +24,8 @@ class SQLDestination(Destination):
         pa.binary(): String,  
         pa.bool_(): Boolean,
         pa.timestamp('us', tz='UTC'): DateTime(True),  
-        pa.date32(): DateTime,
-        pa.date64(): DateTime
+        pa.date32(): Date,
+        pa.date64(): Date,
     }
 
 
@@ -39,7 +39,7 @@ class SQLDestination(Destination):
         SmallInteger: pa.int64(),
         Numeric: pa.float64(),
         Boolean: pa.bool_(),
-        Date: pa.timestamp('us', tz='UTC'),
+        Date: pa.date32(),
         Time: pa.timestamp('us', tz='UTC'),
         DateTime: pa.timestamp('us', tz='UTC'),
     }
@@ -103,6 +103,29 @@ class SQLDestination(Destination):
     
 
     @staticmethod
+    def schemas_compatible(stream_schema: pa.Schema, existing_schema: pa.Schema) -> bool:
+        """
+        Compare two schemas for compatibility, ignoring column order.
+        Returns True if the schemas are compatible (same column names and types).
+        """
+        # Convert schemas to dictionaries for easier comparison
+        stream_fields = {field.name: field.type for field in stream_schema}
+        existing_fields = {field.name: field.type for field in existing_schema}
+        
+        # Check if all columns exist in both schemas with matching types
+        if set(stream_fields.keys()) != set(existing_fields.keys()):
+            return False
+        
+        # Check if all column types match
+        for col_name, stream_type in stream_fields.items():
+            existing_type = existing_fields[col_name]
+            if stream_type != existing_type:
+                return False
+        
+        return True
+
+
+    @staticmethod
     def create_table_if_not_exists(conn, stream:Stream, override_name:str = None):
         # create a table for this stream if it doesn't already exist
         
@@ -118,8 +141,8 @@ class SQLDestination(Destination):
             table = Table(name, metadata_obj, schema=stream.schema_name, autoload_with=insp)
             existing_schema = SQLDestination.table_ddl_to_schema(table.columns)
             
-            # if not, we can't write to it
-            if not existing_schema.equals(stream.schema):
+            # Use flexible schema comparison that ignores column order
+            if not SQLDestination.schemas_compatible(stream.schema, existing_schema):
                 raise ValueError(f"Existing schema for stream {name} does not match.")
 
         else:

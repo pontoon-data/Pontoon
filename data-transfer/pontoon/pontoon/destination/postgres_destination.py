@@ -141,6 +141,12 @@ class PostgresDestination(SQLDestination):
             if callable(progress_callback):
                 progress.subscribe(progress_callback)
 
+            # Check if there are any records to process
+            stream_size = ds.size(stream)
+            if stream_size == 0:
+                progress.message("No records to process for this stream")
+                continue
+
             with self._connect() as conn:
                 # create target table for the stream if it doesn't exist
                 table = SQLDestination.create_table_if_not_exists(conn, stream)
