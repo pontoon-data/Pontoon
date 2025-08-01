@@ -4,7 +4,7 @@ on:
   pull_request:
 
 jobs:
-  tests:
+  test:
     runs-on: ubuntu-latest
 
     services:
@@ -23,11 +23,16 @@ jobs:
           --health-retries=5
 
     env:
+      ENV: test
       POSTGRES_USER: test
       POSTGRES_PASSWORD: test
-      POSTGRES_DB: pontoon
+      POSTGRES_DATABASE: pontoon
       POSTGRES_HOST: localhost
       POSTGRES_PORT: 5432
+      ALLOW_ORIGIN: http://localhost:3000
+      JWT_ALGORITHM: HS256
+      JWT_SIGNING_KEY: test_key
+      SKIP_TRANSFERS: true
 
     steps:
       - name: Checkout repo
