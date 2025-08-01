@@ -7,11 +7,11 @@ import {
   CircularProgress,
   Divider,
   FormHelperText,
+  Alert,
 } from "@mui/material";
-import { useState } from "react";
 import { Form, Formik } from "formik";
 import * as Yup from "yup";
-import useSWR from "swr";
+import { mutate } from "swr";
 import useSWRMutation from "swr/mutation";
 import Link from "next/link";
 import { ChevronLeft } from "@mui/icons-material";
@@ -40,116 +40,128 @@ import {
   getPostgresValidation,
   getPostgresInitialValues,
 } from "@/app/components/forms/connection-details/PostgresConnectionDetails";
-import {
-  getRequest,
-  postRequest,
-  putRequest,
-  pollTaskStatus,
-} from "@/app/api/requests";
+import { postRequest, putRequest, pollTaskStatus } from "@/app/api/requests";
+
+const testConnection = async (key, { arg: values, sourceId }) => {
+  const params = {
+    source_name: values.source_name,
+    vendor_type: values.vendor_type,
+    connection_info: {
+      vendor_type: values.vendor_type,
+      ...values[values.vendor_type],
+    },
+  };
+
+  try {
+    if (!sourceId) {
+      console.log("Creating source");
+      const result = await postRequest("/sources", { arg: params });
+      const check = await postRequest(`/sources/${result.source_id}/check`, {
+        arg: {},
+      });
+      const status = await pollTaskStatus(
+        `/sources/${result.source_id}/check/${check.task_id}`
+      );
+      console.log("source_id", result.source_id);
+      console.log("task_id", check.task_id);
+
+      if (
+        status.success === undefined ||
+        status.success === null ||
+        status.success === false
+      ) {
+        throw new Error(status.message);
+      }
+
+      return {
+        source_id: result.source_id,
+        success: status.success,
+      };
+    } else {
+      console.log("Updating source");
+      const result = await putRequest(`/sources/${sourceId}`, { arg: params });
+      const check = await postRequest(`/sources/${sourceId}/check`, {
+        arg: {},
+      });
+      const status = await pollTaskStatus(
+        `/sources/${sourceId}/check/${check.task_id}`
+      );
+      console.log("source_id", sourceId);
+      console.log("task_id", check.task_id);
+
+      if (
+        status.success === undefined ||
+        status.success === null ||
+        status.success === false
+      ) {
+        throw new Error(status.message);
+      }
+
+      return {
+        source_id: result.source_id,
+        success: status.success,
+      };
+    }
+  } catch (e) {
+    console.warn("Error testing connection: ", e);
+    throw e;
+  }
+};
+
+const enableSource = async (key, { arg: sourceId }) => {
+  try {
+    const result = await putRequest(`/sources/${sourceId}`, {
+      arg: { is_enabled: true, state: "CREATED" },
+    });
+    // Invalidate the sources cache since there's a new source
+    mutate("/sources");
+    return result;
+  } catch (e) {
+    console.warn("Error enabling source: ", e);
+    throw e;
+  }
+};
 
 const AddSourceForm = () => {
-  const Status = Object.freeze({
-    NOT_STARTED: 0,
-    LOADING: 1,
-    SUCCESS: 2,
-    FAILED: 3,
-  });
-
-  // After refreshing the page, making the first API call resets the form.
-  // In order to avoid the refresh happening during form validation, this api call is made here,
-  // even though it is not used for anything
   const {
-    data: sources,
-    error: isError,
-    isLoading,
-  } = useSWR("/sources", getRequest);
+    trigger: testConnectionTrigger,
+    data: testConnectionResult,
+    error: testConnectionError,
+    isMutating: isTestConnectionMutating,
+  } = useSWRMutation("/sources/test_connection", testConnection);
+  const sourceId = testConnectionResult?.source_id;
 
-  // state of the connection test
-  const [testConnectionStatus, setTestConnectionStatus] = useState(
-    Status.NOT_STARTED
-  );
-
-  // state for the source being created
-  const [sourceCreated, setSourceCreated] = useState(false);
-  const [sourceId, setSourceId] = useState("");
+  const {
+    trigger: enableSourceTrigger,
+    data: enableSourceResult,
+    error: enableSourceError,
+    isMutating: isEnableSourceMutating,
+  } = useSWRMutation((sourceId) => `/sources/${sourceId}`, enableSource);
 
   const router = useRouter();
 
-  const createSource = (params) => {
-    return postRequest("/sources", { arg: params });
-  };
-
-  const updateSource = (sourceId, params) => {
-    return putRequest(`/sources/${sourceId}`, { arg: params });
-  };
-
-  const startSourceCheck = (sourceId) => {
-    return postRequest(`/sources/${sourceId}/check`, { arg: {} });
-  };
-
-  const waitForSourceCheck = (sourceId, taskId) => {
-    return pollTaskStatus(`/sources/${sourceId}/check/${taskId}`);
-  };
-
-  const updateCheckState = (result) => {
-    if (!result.success || result.success === false) {
-      setTestConnectionStatus(Status.FAILED);
-    } else {
-      setTestConnectionStatus(Status.SUCCESS);
-    }
-  };
-
   // form submission handler
   const handleCreateAndCheckSource = async (values, validateForm) => {
-    setTestConnectionStatus(Status.LOADING);
     const errors = await validateForm(values);
     if (Object.keys(errors).length > 0) {
       console.log(errors);
-      setTestConnectionStatus(Status.FAILED);
       return;
     }
-    
-    const params = {
-      source_name: values.source_name,
-      vendor_type: values.vendor_type,
-      connection_info: {
-        vendor_type: values.vendor_type,
-        ...values[values.vendor_type],
-      },
-    };
 
     try {
-      if (!sourceCreated) {
-        console.log("Creating source");
-        const result = await createSource(params);
-        const check = await startSourceCheck(result.source_id);
-        const status = await waitForSourceCheck(
-          result.source_id,
-          check.task_id
-        );
-
-        setSourceCreated(true);
-        setSourceId(result.source_id);
-        updateCheckState(status);
-      } else {
-        console.log("Updating source");
-        await updateSource(sourceId, params);
-        const check = await startSourceCheck(sourceId);
-        const status = await waitForSourceCheck(sourceId, check.task_id);
-        updateCheckState(status);
-      }
+      const result = await testConnectionTrigger(values, sourceId);
     } catch (e) {
-      setTestConnectionStatus(Status.FAILED);
-    } finally {
+      console.warn("Error testing connection: ", e);
+      return;
     }
   };
 
   // when the create button is clicked
   const handleEnableSource = async (values) => {
     console.log("Submitting form");
-    if (sourceCreated) {
+    if (sourceId) {
       try {
-        await updateSource(sourceId, { is_enabled: true, state: "CREATED" });
+        await enableSourceTrigger(sourceId);
         router.push("/sources");
       } catch (e) {
         console.log("Enabling source failed: ", e);
@@ -243,7 +255,8 @@ const AddSourceForm = () => {
                     variant="contained"
                     disabled={
                       isValidating ||
-                      testConnectionStatus == Status.LOADING ||
+                      isTestConnectionMutating ||
+                      isEnableSourceMutating ||
                       !isValid ||
                       !dirty
                     }
@@ -253,35 +266,51 @@ const AddSourceForm = () => {
                   >
                     Test Connection
                   </Button>
-                  {testConnectionStatus == Status.LOADING ? (
+                  {isTestConnectionMutating ? (
                     <CircularProgress size={28} />
                   ) : null}
-                  {testConnectionStatus == Status.SUCCESS ? (
+                  {testConnectionResult?.success === true ? (
                     <Typography fontSize={26}>✅</Typography>
                   ) : null}
-                  {testConnectionStatus == Status.FAILED ? (
+                  {testConnectionError && !isTestConnectionMutating ? (
                     <Typography fontSize={26}>❌</Typography>
                   ) : null}
                 </Stack>
                 <FormHelperText>
                   Testing the connection may take up to a minute.
                 </FormHelperText>
+                {testConnectionError ? (
+                  <Alert severity="error">
+                    <Typography>{testConnectionError.message}</Typography>
+                  </Alert>
+                ) : null}
+                {enableSourceError ? (
+                  <Alert severity="error">
+                    <Typography>{enableSourceError.message}</Typography>
+                  </Alert>
+                ) : null}
               </Stack>
-              <Button
-                type="submit"
-                variant="contained"
-                disabled={
-                  isValidating ||
-                  !(testConnectionStatus == Status.SUCCESS) ||
-                  !isValid ||
-                  !dirty
-                }
-                sx={{
-                  width: "fit-content",
-                }}
-              >
-                Create
-              </Button>
+              <Stack direction="row" alignItems="center" spacing={1.5}>
+                <Button
+                  type="submit"
+                  variant="contained"
+                  disabled={
+                    isValidating ||
+                    isTestConnectionMutating ||
+                    isEnableSourceMutating ||
+                    testConnectionError ||
+                    testConnectionResult?.success === false ||
+                    !isValid ||
+                    !dirty
+                  }
+                  sx={{
+                    width: "fit-content",
+                  }}
+                >
+                  Create
+                </Button>
+                {isEnableSourceMutating ? <CircularProgress size={28} /> : null}
+              </Stack>
             </Stack>
           </Form>
         )}
