@@ -90,7 +90,7 @@ Pontoon is used by vendors (eg. Salesforce) to **provide data syncs** as a produ
 |                                        | **Pontoon**   | Airbyte | Singer/Stitch      | Fivetran | Hightouch                 | Prequel | Bobsled |
 | ---------------------------------      | ------------- | ------- | ------------------ | -------- | ------------------------- | ------- | ------- |
 | **Open Source**                        | ✅ Yes         | ✅ Yes   | ✅ Singer only      | ❌ No     | ⚠️ Some SDKs              | ❌ No    | ❌ No    |
-| **Self-Hosted Option**                 | ✅ Yes         | ✅ Yes   | ✅ Yes              | ❌ No     | ✅ Yes                     | ❌ No    | ❌ No    |
+| **Self-Hosted Option**                 | ✅ Yes         | ✅ Yes   | ✅ Yes              | ❌ No     | ✅ Yes                     | ✅ Yes    | ❌ No    |
 | **First-class Data Products**          | ✅ Yes         | ❌ No    | ❌ No               | ❌ No     | ⚠️ Possible (with effort) | ✅ Yes   | ✅ Yes   |
 | **Multi-Tenant Data Export**           | ✅ Yes         | ❌ No    | ❌ No               | ❌ No     | ⚠️ Custom                 | ✅ Yes   | ✅ Yes   |
 | **Direct Data Warehouse Integrations** | ✅ Yes         | ✅ Yes   | ⚠️ Destinations only     | ⚠️ Destinations only | ⚠️ Sources only          | ✅ Yes   | ✅ Yes |
