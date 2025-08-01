@@ -48,7 +48,7 @@ jobs:
       - name: Run unit tests
         working-directory: api/
         run: |
-          pip install requirements.txt
+          pip install -r requirements.txt
           pip install ../data-transfer/pontoon/
           pip install -e .
           python -m pgmigrate -c postgresql://test:test@localhost:5432/pontoon -d db/ -t 1 migrate
