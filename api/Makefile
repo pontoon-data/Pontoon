@@ -10,6 +10,11 @@ export JWT_ALGORITHM=HS256
 export JWT_SIGNING_KEY=test_key
 export SKIP_TRANSFERS=true
 
+dev:
+	pip install requirements.txt
+	pip install ../data-transfer/pontoon/
+	pip install -e .
+		
 test:
 	@echo "==> Stopping test database (if running)..."
 	docker stop api_test_db || true
