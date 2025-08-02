@@ -9,11 +9,13 @@ import {
   Checkbox,
   CircularProgress,
   FormHelperText,
+  Alert,
 } from "@mui/material";
 import { useState } from "react";
 import { Form, Formik } from "formik";
 import * as Yup from "yup";
 import useSWRMutation from "swr/mutation";
+import { mutate } from "swr";
 import Link from "next/link";
 import { ChevronLeft } from "@mui/icons-material";
 import { useRouter } from "next/navigation";
@@ -51,46 +53,147 @@ import {
   getPostgresInitialValues,
 } from "@/app/components/forms/connection-details/PostgresConnectionDetails";
 
+const testConnection = async (key, { arg: values, destinationId }) => {
+  const params = {
+    destination_name: values.destination_name,
+    vendor_type: values.vendor_type,
+    recipient_id: values.recipient_id,
+    schedule: {
+      type: "INCREMENTAL",
+      frequency: values.schedule_frequency,
+      day: values.schedule_day,
+      hour: values.schedule_hour,
+      minute: 0,
+    },
+    models: values.selectedModels,
+    connection_info: {
+      vendor_type: values.vendor_type,
+      ...values[values.vendor_type],
+    },
+  };
+
+  try {
+    if (!destinationId) {
+      console.log("Creating destination");
+      const result = await postRequest("/destinations", { arg: params });
+      const check = await postRequest(
+        `/destinations/${result.destination_id}/check`,
+        {
+          arg: {},
+        }
+      );
+      const status = await pollTaskStatus(
+        `/destinations/${result.destination_id}/check/${check.task_id}`
+      );
+      console.log("destination_id", result.destination_id);
+      console.log("task_id", check.task_id);
+
+      if (
+        status.success === undefined ||
+        status.success === null ||
+        status.success === false
+      ) {
+        throw new Error(status.cause);
+      }
+
+      return {
+        destination_id: result.destination_id,
+        success: status.success,
+      };
+    } else {
+      console.log("Updating destination");
+      const result = await putRequest(`/destinations/${destinationId}`, {
+        arg: params,
+      });
+      const check = await postRequest(`/destinations/${destinationId}/check`, {
+        arg: {},
+      });
+      const status = await pollTaskStatus(
+        `/destinations/${destinationId}/check/${check.task_id}`
+      );
+      console.log("destination_id", destinationId);
+      console.log("task_id", check.task_id);
+
+      if (
+        status.success === undefined ||
+        status.success === null ||
+        status.success === false
+      ) {
+        throw new Error(status.cause);
+      }
+
+      return {
+        destination_id: result.destination_id,
+        success: status.success,
+      };
+    }
+  } catch (e) {
+    console.warn("Error testing connection: ", e);
+    throw e;
+  }
+};
+
+const enableDestination = async (key, { arg: destinationId }) => {
+  try {
+    const result = await putRequest(`/destinations/${destinationId}`, {
+      arg: { is_enabled: true, state: "CREATED" },
+    });
+    // Invalidate the destinations cache since there's a new destination
+    mutate("/destinations");
+    return result;
+  } catch (e) {
+    console.warn("Error enabling destination: ", e);
+    throw e;
+  }
+};
+
 const AddDestination = () => {
-  const Status = Object.freeze({
-    NOT_STARTED: 0,
-    LOADING: 1,
-    SUCCESS: 2,
-    FAILED: 3,
-  });
+  const {
+    trigger: testConnectionTrigger,
+    data: testConnectionResult,
+    error: testConnectionError,
+    isMutating: isTestConnectionMutating,
+  } = useSWRMutation("/destinations/test_connection", testConnection);
+  const destinationId = testConnectionResult?.destination_id;
 
-  // state of the connection test
-  const [testConnectionStatus, setTestConnectionStatus] = useState(
-    Status.NOT_STARTED
+  const {
+    trigger: enableDestinationTrigger,
+    data: enableDestinationResult,
+    error: enableDestinationError,
+    isMutating: isEnableDestinationMutating,
+  } = useSWRMutation(
+    (destinationId) => `/destinations/${destinationId}`,
+    enableDestination
   );
-
-  // state for the source being created
-  const [destinationCreated, setDestinationCreated] = useState(false);
-  const [destinationId, setDestinationId] = useState("");
 
   const router = useRouter();
 
-  const createDestination = (params) => {
-    return postRequest("/destinations", { arg: params });
+  // form submission handler
+  const handleCreateAndCheckDestination = async (values, validateForm) => {
+    const errors = await validateForm(values);
+    if (Object.keys(errors).length > 0) {
+      console.log(errors);
+      return;
+    }
+
+    try {
+      const result = await testConnectionTrigger(values, destinationId);
+    } catch (e) {
+      console.warn("Error testing connection: ", e);
+      return;
+    }
   };
 
-  const updateDestination = (destinationId, params) => {
-    return putRequest(`/destinations/${destinationId}`, { arg: params });
-  };
-
-  const startDestinationCheck = (destinationId) => {
-    return postRequest(`/destinations/${destinationId}/check`, { arg: {} });
-  };
-
-  const waitForDestinationCheck = (destinationId, taskId) => {
-    return pollTaskStatus(`/destinations/${destinationId}/check/${taskId}`);
-  };
-
-  const updateCheckState = (result) => {
-    if (!result.success || result.success === false) {
-      setTestConnectionStatus(Status.FAILED);
-    } else {
-      setTestConnectionStatus(Status.SUCCESS);
+  // when the create button is clicked
+  const handleEnableDestination = async (values) => {
+    console.log("Submitting form");
+    if (destinationId) {
+      try {
+        await enableDestinationTrigger(destinationId);
+        router.push("/destinations");
+      } catch (e) {
+        console.log("Enabling destination failed: ", e);
+      }
     }
   };
 
@@ -106,77 +209,6 @@ const AddDestination = () => {
     isLoading: modelsLoading,
   } = useSWR("/models", getRequest);
   const modelIds = models?.map((m) => m.model_id);
-
-  // form submission handler
-  const handleCreateAndCheckDestination = async (values, validateForm) => {
-    setTestConnectionStatus(Status.LOADING);
-    const errors = await validateForm(values);
-    if (Object.keys(errors).length > 0) {
-      console.log(errors);
-      setTestConnectionStatus(Status.FAILED);
-      return;
-    }
-    const params = {
-      destination_name: values.destination_name,
-      vendor_type: values.vendor_type,
-      recipient_id: values.recipient_id,
-      schedule: {
-        type: "INCREMENTAL",
-        frequency: values.schedule_frequency,
-        day: values.schedule_day,
-        hour: values.schedule_hour,
-        minute: 0,
-      },
-      models: values.selectedModels,
-      connection_info: {
-        vendor_type: values.vendor_type,
-        ...values[values.vendor_type],
-      },
-    };
-
-    try {
-      if (!destinationCreated) {
-        console.log("Creating destination");
-        const result = await createDestination(params);
-        const check = await startDestinationCheck(result.destination_id);
-        const status = await waitForDestinationCheck(
-          result.destination_id,
-          check.task_id
-        );
-
-        setDestinationCreated(true);
-        setDestinationId(result.destination_id);
-        updateCheckState(status);
-      } else {
-        console.log("Updating destination");
-        await updateDestination(destinationId, params);
-        const check = await startDestinationCheck(destinationId);
-        const status = await waitForDestinationCheck(
-          destinationId,
-          check.task_id
-        );
-        updateCheckState(status);
-      }
-    } catch (e) {
-      setTestConnectionStatus(Status.FAILED);
-    } finally {
-    }
-  };
-
-  // when the create button is clicked
-  const handleEnableDestination = async () => {
-    if (destinationCreated) {
-      try {
-        await updateDestination(destinationId, {
-          is_enabled: true,
-          state: "CREATED",
-        });
-        router.push("/destinations");
-      } catch (e) {
-        console.log("Enabling destination failed: ", e);
-      }
-    }
-  };
 
   if (recipientsError || modelsError) {
     return <Typography>Error with API</Typography>;
@@ -389,7 +421,8 @@ const AddDestination = () => {
                         variant="contained"
                         disabled={
                           isValidating ||
-                          testConnectionStatus == Status.LOADING ||
+                          isTestConnectionMutating ||
+                          isEnableDestinationMutating ||
                           !isValid ||
                           !dirty
                         }
@@ -399,31 +432,50 @@ const AddDestination = () => {
                       >
                         Test Connection
                       </Button>
-                      {testConnectionStatus == Status.LOADING ? (
-                        <CircularProgress size={28} />
-                      ) : null}
-                      {testConnectionStatus == Status.SUCCESS ? (
-                        <Typography fontSize={26}>✅</Typography>
-                      ) : null}
-                      {testConnectionStatus == Status.FAILED ? (
-                        <Typography fontSize={26}>❌</Typography>
-                      ) : null}
+                      {renderTestConnectionStatus(
+                        testConnectionResult,
+                        testConnectionError,
+                        isTestConnectionMutating
+                      )}
                     </Stack>
                     <FormHelperText>
                       Testing the connection may take a few minutes.
                     </FormHelperText>
+                    {testConnectionError ? (
+                      <Alert severity="error">
+                        <Typography>{testConnectionError.message}</Typography>
+                      </Alert>
+                    ) : null}
+                    {enableDestinationError ? (
+                      <Alert severity="error">
+                        <Typography>
+                          {enableDestinationError.message}
+                        </Typography>
+                      </Alert>
+                    ) : null}
                   </Stack>
 
-                  <Button
-                    type="submit"
-                    variant="contained"
-                    disabled={
-                      isSubmitting || !(testConnectionStatus == Status.SUCCESS)
-                    }
-                    sx={{ width: "fit-content" }}
-                  >
-                    Create
-                  </Button>
+                  <Stack direction="row" alignItems="center" spacing={1.5}>
+                    <Button
+                      type="submit"
+                      variant="contained"
+                      disabled={
+                        isValidating ||
+                        isTestConnectionMutating ||
+                        isEnableDestinationMutating ||
+                        testConnectionError ||
+                        testConnectionResult?.success === false ||
+                        !isValid ||
+                        !dirty
+                      }
+                      sx={{ width: "fit-content" }}
+                    >
+                      Create
+                    </Button>
+                    {isEnableDestinationMutating ? (
+                      <CircularProgress size={28} />
+                    ) : null}
+                  </Stack>
                 </Stack>
               </Form>
             );
@@ -447,6 +499,23 @@ const renderConnectionDetails = (vendor_type, setFieldValue, values) => {
     default:
       return <Typography>Error: Destination type not supported</Typography>;
   }
+};
+
+const renderTestConnectionStatus = (
+  testConnectionResult,
+  testConnectionError,
+  isTestConnectionMutating
+) => {
+  if (isTestConnectionMutating) {
+    return <CircularProgress size={28} />;
+  }
+  if (testConnectionError) {
+    return <Typography fontSize={26}>❌</Typography>;
+  }
+  if (testConnectionResult?.success === true) {
+    return <Typography fontSize={26}>✅</Typography>;
+  }
+  return null;
 };
 
 const renderScheduleDetails = (schedule_frequency) => {

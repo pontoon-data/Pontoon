@@ -62,8 +62,6 @@ const testConnection = async (key, { arg: values, sourceId }) => {
       const status = await pollTaskStatus(
         `/sources/${result.source_id}/check/${check.task_id}`
       );
-      console.log("source_id", result.source_id);
-      console.log("task_id", check.task_id);
 
       if (
         status.success === undefined ||
@@ -86,8 +84,6 @@ const testConnection = async (key, { arg: values, sourceId }) => {
       const status = await pollTaskStatus(
         `/sources/${sourceId}/check/${check.task_id}`
       );
-      console.log("source_id", sourceId);
-      console.log("task_id", check.task_id);
 
       if (
         status.success === undefined ||
@@ -266,15 +262,11 @@ const AddSourceForm = () => {
                   >
                     Test Connection
                   </Button>
-                  {isTestConnectionMutating ? (
-                    <CircularProgress size={28} />
-                  ) : null}
-                  {testConnectionResult?.success === true ? (
-                    <Typography fontSize={26}>✅</Typography>
-                  ) : null}
-                  {testConnectionError && !isTestConnectionMutating ? (
-                    <Typography fontSize={26}>❌</Typography>
-                  ) : null}
+                  {renderTestConnectionStatus(
+                    testConnectionResult,
+                    testConnectionError,
+                    isTestConnectionMutating
+                  )}
                 </Stack>
                 <FormHelperText>
                   Testing the connection may take up to a minute.
@@ -317,6 +309,23 @@ const AddSourceForm = () => {
       </Formik>
     </Box>
   );
+};
+
+const renderTestConnectionStatus = (
+  testConnectionResult,
+  testConnectionError,
+  isTestConnectionMutating
+) => {
+  if (isTestConnectionMutating) {
+    return <CircularProgress size={28} />;
+  }
+  if (testConnectionError) {
+    return <Typography fontSize={26}>❌</Typography>;
+  }
+  if (testConnectionResult?.success === true) {
+    return <Typography fontSize={26}>✅</Typography>;
+  }
+  return null;
 };
 
 const renderConnectionDetails = (vendor_type) => {
