@@ -85,8 +85,6 @@ const testConnection = async (key, { arg: values, destinationId }) => {
       const status = await pollTaskStatus(
         `/destinations/${result.destination_id}/check/${check.task_id}`
       );
-      console.log("destination_id", result.destination_id);
-      console.log("task_id", check.task_id);
 
       if (
         status.success === undefined ||
@@ -111,8 +109,6 @@ const testConnection = async (key, { arg: values, destinationId }) => {
       const status = await pollTaskStatus(
         `/destinations/${destinationId}/check/${check.task_id}`
       );
-      console.log("destination_id", destinationId);
-      console.log("task_id", check.task_id);
 
       if (
         status.success === undefined ||
