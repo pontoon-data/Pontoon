@@ -36,6 +36,7 @@ services:
       CELERY_BROKER_URL: ${CELERY_BROKER_URL}
       CELERY_RESULT_BACKEND: ${CELERY_RESULT_BACKEND}
       PONTOON_API_ENDPOINT: ${API_ENDPOINT}
+      POSTHOG_PAPIK: ${POSTHOG_PAPIK}
     depends_on:
       - postgres
       - redis

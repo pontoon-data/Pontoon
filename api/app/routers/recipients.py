@@ -4,7 +4,7 @@ from sqlmodel import Field, SQLModel, select, func
 import uuid
 import time
 
-from app.dependencies import get_session, get_auth
+from app.dependencies import get_session, get_auth, send_telemetry_event
 from app.models import Auth, Recipient
 
 router = APIRouter(
@@ -22,12 +22,19 @@ def get_recipient_by_id(session, recipient_id:uuid.UUID):
 
 @router.post("", response_model=Recipient.Public, status_code=status.HTTP_201_CREATED)
 def create_recipient(recipient: Recipient.Create, session=Depends(get_session), auth:Auth = Security(get_auth)):
-    return Recipient.create(
+    created_recipient = Recipient.create(
         session,
         recipient,
         created_by=auth.sub_uuid(),
         organization_id=auth.org_uuid()
     )
+    
+    # Send telemetry event
+    send_telemetry_event(
+        "recipient_created"
+    )
+    
+    return created_recipient
 
 
 @router.get("", response_model=list[Recipient.Public])

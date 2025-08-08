@@ -6,7 +6,7 @@ from datetime import datetime, timezone
 from fastapi import HTTPException, Depends, Query, status, APIRouter, Security
 from sqlmodel import Session
 
-from app.dependencies import get_session, get_settings, get_auth
+from app.dependencies import get_session, get_settings, get_auth, send_telemetry_event
 from app.models import Auth, Task, Source
 from app.routers.common import create_transfer_task, transfer_task_status
 from pontoon.orchestration.client import Transfer, TransferException
@@ -37,12 +37,22 @@ def list_sources(session:Session = Depends(get_session), auth:Auth = Security(ge
 @router.post("", response_model=Source.Public, status_code=status.HTTP_201_CREATED)
 def create_source(source:Source.Create, session:Session = Depends(get_session), auth:Auth = Security(get_auth)):
     try:
-        return Source.create(
+        created_source = Source.create(
             session,
             source,
             created_by=auth.sub_uuid(),
             organization_id=auth.org_uuid()
         )
+        
+        # Send telemetry event
+        send_telemetry_event(
+            "source_created",
+            properties={
+                "vendor_type": created_source.vendor_type
+            }
+        )
+        
+        return created_source
     except Source.Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
@@ -126,7 +136,31 @@ def create_source_check(source_id:uuid.UUID, session=Depends(get_session), auth:
 
 @router.get("/{source_id}/check/{task_id}", response_model=Task.Public)
 def source_check_status(source_id:uuid.UUID, task_id:uuid.UUID, session=Depends(get_session)):
-    return transfer_task_status(session, task_id)
+    task = transfer_task_status(session, task_id)
+    
+    if task.meta.get('type') != 'source-check':
+        raise HTTPException(status_code=400, detail="Task is not a source check")
+    
+    if task.meta.get('source_id') != str(source_id):
+        raise HTTPException(status_code=400, detail="Task does not belong to this source")
+    
+    source = Source.get(session, source_id)
+    if task.status == 'COMPLETE' and task.output.get('success') == True:
+        send_telemetry_event(
+            "source_test_connection_success",
+            properties={
+                "vendor_type": source.vendor_type
+            }
+        )
+    elif task.status == 'COMPLETE' and task.output.get('success') == False:
+        send_telemetry_event(
+            "source_test_connection_failure",
+            properties={
+                "vendor_type": source.vendor_type
+            }
+        ) 
+
+    return task
 
 
 @router.post("/{source_id}/metadata", response_model=Task.Public)

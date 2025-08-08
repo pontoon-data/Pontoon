@@ -7,6 +7,7 @@ from app.routers.recipients import get_recipient_by_id
 from app.routers.sources import get_source_by_id
 from app.routers.models import get_model_by_id
 from app.routers.destinations import get_destination_by_id
+from app.dependencies import send_telemetry_event
 
 
 router = APIRouter(
@@ -47,6 +48,20 @@ def create_transfer_run(transfer_run:TransferRun.Create, session=Depends(get_ses
 
 @router.put("/runs/{transfer_run_id}", response_model=TransferRun.Model)
 def update_transfer_run(transfer_run_id:uuid.UUID, transfer_run:TransferRun.Update, session=Depends(get_session)):
-    return TransferRun.update(session, transfer_run_id, transfer_run)
+    transfer_run = TransferRun.update(session, transfer_run_id, transfer_run)
+
+    transfer_run_type = transfer_run.meta.get('arguments', {}).get('type')
+    if transfer_run_type == "transfer" and transfer_run.status == 'SUCCESS':
+        print("Sending transfer_run_success telemetry event")
+        send_telemetry_event(
+            "transfer_run_success"
+        )
+    elif transfer_run_type == "transfer" and transfer_run.status == 'FAILURE':
+        print("Sending transfer_run_failure telemetry event")
+        send_telemetry_event(
+            "transfer_run_failure"
+        )
+    print("telemetry event should have been sent")
+    return transfer_run
 
 
