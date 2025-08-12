@@ -50,5 +50,6 @@ Create schemas named `source` and `target`. Load the `tests/data/leads_xs_*.csv`
 Create schemas named `pontoon` and `target`. Load the same test data into `pontoon.leads_xs`
 
 ## Running
+Install test dependencies: `pytest` and `python-dotenv`.
 
-`make tests` or use `pytest` directly to run specific sets of tests.
+`make test`, `make test-integration` or use `pytest` directly to run specific sets of tests, e.g. `pytest -s tests/integration/test_postgres_connectors.py`

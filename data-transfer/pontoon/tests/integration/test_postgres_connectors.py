@@ -28,8 +28,8 @@ class TestPostgresConnectors:
 
         """
             How this test works:
-             - Assumes you have a Postgresql instance with the test data loaded (see README)
-             - Assumes you have configured corresponding ENV vars in .env (see README)
+             - Assumes you have a Postgresql instance with the test data loaded (see data-transfer/pontoon/README.md)
+             - Assumes you have configured corresponding ENV vars in .env (see see data-transfer/pontoon/README.md)
              - Instantiates the Postgresql source connector and checks:
                  - Bad connection info raises the expected errors
                  - Missing source tables and columns raise the expected errors
