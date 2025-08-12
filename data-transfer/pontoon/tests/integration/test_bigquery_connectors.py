@@ -144,12 +144,6 @@ class TestBigQueryConnectors:
 
         drop()
 
-        # Cannot connect to destination
-        # dest = get_test_destination(connect_config={'host': 'doesnotexist'})
-        # ds = get_memory_source().read(progress_callback=read_progress_handler)
-        # with pytest.raises(DestinationConnectionFailed):
-        #     dest.write(ds, progress_callback=write_progress_handler)
-
 
         # Existing destination schema is not compatible (destination changed)
         dest = get_test_destination()

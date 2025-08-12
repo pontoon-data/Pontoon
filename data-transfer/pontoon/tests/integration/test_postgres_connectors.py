@@ -26,6 +26,17 @@ clear_cache_files()
 class TestPostgresConnectors:
         
     def test_postgres_source(self):
+
+        """
+            How this test works:
+             - Assumes you have a Postgresql instance with the test data loaded (see README)
+             - Assumes you have configured corresponding ENV vars in .env (see README)
+             - Instantiates the Postgresql source connector and checks:
+                 - Bad connection info raises the expected errors
+                 - Missing source tables and columns raise the expected errors
+                 - Empty result sets are handled gracefully
+                 - Full refresh and incremental replication modes return the expected results
+        """
         
         def get_test_source(mode_config={}, with_config={}, connect_config={}, streams_config={}):
             test_mode_config = {
@@ -111,6 +122,20 @@ class TestPostgresConnectors:
 
      
     def test_postgres_destination(self):
+
+        """
+            How this test works:
+             - Assumes you have a Postgresql instance with database and "target" schema created
+             - Assumes you have configured corresponding ENV vars in .env (see README)
+             - Uses the "memory" source as a static data source
+             - Instantiates the Postgresql destination connector and checks:
+                 - Bad connection info raises the expected errors
+                 - Incompatible schemas between source stream and destination raise expected errors
+                 - Full refresh overwrites existing target tables
+                 - Back to back full refreshes
+                 - Full refresh followed by sequence of incremental syncs
+        """
+        
 
         def get_test_destination(mode_config={}, connect_config={}):
 
