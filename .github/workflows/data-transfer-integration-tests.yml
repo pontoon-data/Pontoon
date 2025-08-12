@@ -54,7 +54,7 @@ jobs:
         working-directory: data-transfer/pontoon
         run: |
           python -m pip install --upgrade pip
-          pip install pytest
+          pip install pytest python-dotenv
           pip install .
           
           cat <<EOF > .env
