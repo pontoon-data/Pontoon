@@ -1,0 +1,72 @@
+name: Data Transfer Integration Tests
+
+on:
+  pull_request:
+
+jobs:
+  postgresql-connector:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: test
+          POSTGRES_PASSWORD: test
+          POSTGRES_DB: pontoon
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready -U test"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+
+    env:
+      ENV: test
+      POSTGRES_USER: test
+      POSTGRES_PASSWORD: test
+      POSTGRES_DATABASE: pontoon
+      POSTGRES_HOST: localhost
+      POSTGRES_PORT: 5432
+      ALLOW_ORIGIN: http://localhost:3000
+      JWT_ALGORITHM: HS256
+      JWT_SIGNING_KEY: test_key
+      SKIP_TRANSFERS: true
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: 3.12
+
+      - name: Wait for DB to be ready
+        run: |
+          for i in {1..10}; do
+            pg_isready -h localhost -U test && break
+            echo "Waiting for postgres..." && sleep 2
+          done
+
+      - name: Run integration tests
+        working-directory: data-transfer/pontoon
+        run: |
+          python -m pip install --upgrade pip
+          pip install pytest
+          pip install .
+          
+          cat <<EOF > .env
+          POSTGRES_HOST=localhost
+          POSTGRES_USER=test
+          POSTGRES_PASSWORD=test
+          POSTGRES_DATABASE=pontoon
+          EOF
+
+          PGPASSWORD=test psql -h localhost -U test -d pontoon -c "CREATE SCHEMA source;"
+          PGPASSWORD=test psql -h localhost -U test -d pontoon -c "CREATE SCHEMA target;"
+          PGPASSWORD=test psql -h localhost -U test -d pontoon -c "CREATE TABLE source.leads_xs (id uuid NOT NULL,created_at timestamp NOT NULL,updated_at timestamp NOT NULL,customer_id text NOT NULL,name text NOT NULL,email text NOT NULL,score integer NOT NULL,notes text);"
+          PGPASSWORD=test psql -h localhost -U test -d pontoon -c "\COPY source.leads_xs(id,created_at,updated_at,customer_id,name,email,score,notes) FROM 'tests/data/leads_cx_20250701.csv' CSV HEADER;"
+
+          pytest -s tests/integration/test_postgres_connectors.py
