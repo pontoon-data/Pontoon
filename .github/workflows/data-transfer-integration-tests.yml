@@ -67,6 +67,6 @@ jobs:
           PGPASSWORD=test psql -h localhost -U test -d pontoon -c "CREATE SCHEMA source;"
           PGPASSWORD=test psql -h localhost -U test -d pontoon -c "CREATE SCHEMA target;"
           PGPASSWORD=test psql -h localhost -U test -d pontoon -c "CREATE TABLE source.leads_xs (id uuid NOT NULL,created_at timestamp NOT NULL,updated_at timestamp NOT NULL,customer_id text NOT NULL,name text NOT NULL,email text NOT NULL,score integer NOT NULL,notes text);"
-          PGPASSWORD=test psql -h localhost -U test -d pontoon -c "\COPY source.leads_xs(id,created_at,updated_at,customer_id,name,email,score,notes) FROM 'tests/data/leads_cx_20250701.csv' CSV HEADER;"
+          PGPASSWORD=test psql -h localhost -U test -d pontoon -c "\COPY source.leads_xs(id,created_at,updated_at,customer_id,name,email,score,notes) FROM 'tests/data/leads_xs_20250701.csv' CSV HEADER;"
 
           pytest -s tests/integration/test_postgres_connectors.py
