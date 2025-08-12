@@ -4,9 +4,14 @@ from typing import List, Dict, Tuple, Generator, Any
 from datetime import datetime, timezone, date
 from decimal import Decimal
 from sqlalchemy import create_engine, inspect, MetaData, Table, text, select, func
+from sqlalchemy.exc import SQLAlchemyError, OperationalError, InterfaceError, DatabaseError, NoSuchTableError
 
 from pontoon import logger
 from pontoon.base import Source, Namespace, Stream, Dataset, Progress, Mode
+from pontoon.base import StreamMissingField
+from pontoon.base import SourceConnectionFailed, \
+                        SourceStreamDoesNotExist, \
+                        SourceStreamInvalidSchema
 
 
 class SQLUtil:
@@ -158,7 +163,10 @@ class SQLSource(Source):
 
     
     def _connect(self):
-        return self._engine.connect()
+        try:
+            return self._engine.connect()
+        except (OperationalError, InterfaceError, DatabaseError) as e:
+            raise SourceConnectionFailed("Failed to connect to source database") from e
 
     
     def test_connect(self):
@@ -251,12 +259,13 @@ class SQLSource(Source):
                 # determine the schema
                 table_name = stream_config['table']
                 metadata = MetaData()
-                table = Table(table_name, metadata, schema=stream_config['schema'], autoload_with=conn)
-                
-                # table doesn't exist?
-                if not table.exists(conn):
-                    raise Exception(f"SQLSource (source-sql) table does not exist: {stream_config['schema']}.{table_name}")
 
+                try:
+                    # table doesn't exist?
+                    table = Table(table_name, metadata, schema=stream_config['schema'], autoload_with=conn)
+                except NoSuchTableError as e:
+                    raise SourceStreamDoesNotExist(f"SQLSource (source-sql) table does not exist: {stream_config['schema']}.{table_name}") from e
+                
                 columns = []
                 for col in table.columns:
                     try:
@@ -266,14 +275,17 @@ class SQLSource(Source):
                         columns.append((col.name, str(col.type)))
 
                 # create a schema from the column field + types
-                stream = Stream(
-                    name=stream_config['table'],
-                    schema_name=stream_config['schema'],
-                    primary_field=stream_config.get('primary_field', None),
-                    cursor_field=stream_config.get('cursor_field', None),
-                    filters=stream_config.get('filters', None),
-                    schema=Stream.build_schema(columns)
-                )
+                try:
+                    stream = Stream(
+                        name=stream_config['table'],
+                        schema_name=stream_config['schema'],
+                        primary_field=stream_config.get('primary_field', None),
+                        cursor_field=stream_config.get('cursor_field', None),
+                        filters=stream_config.get('filters', None),
+                        schema=Stream.build_schema(columns)
+                    )
+                except StreamMissingField as e:
+                    raise SourceStreamInvalidSchema(e) from e
 
                 count_query = SQLUtil.build_select_query(stream, self._mode, count=True) 
                 select_query = SQLUtil.build_select_query(stream, self._mode)
@@ -297,6 +309,7 @@ class SQLSource(Source):
 
                 # configure progress tracking
                 total_count = conn.execute(text(count_query)).scalar_one()
+
                 progress = Progress(
                     f"source+sql://{self._namespace}/{stream.schema_name}/{stream.name}",
                     total=total_count,
@@ -304,6 +317,10 @@ class SQLSource(Source):
                 )
                 if callable(progress_callback):
                     progress.subscribe(progress_callback)
+
+                if total_count == 0:
+                    progress.message("No records to process")
+                    continue
 
                 # execute our main query 
                 result = conn.execution_options(
@@ -321,6 +338,9 @@ class SQLSource(Source):
                         self._cache.write(stream, batch)
                         progress.update(self._chunk_size, increment=True)
                         batch = []
+
+                # close the server side cursor
+                result.close()
 
                 if len(batch) > 0:
                     self._cache.write(stream, batch)

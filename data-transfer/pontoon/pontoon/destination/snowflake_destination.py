@@ -82,16 +82,21 @@ class SnowflakeDestination(SQLDestination):
                 if callable(progress_callback):
                     progress.subscribe(progress_callback)
 
-                # create a table for the stream if it doesn't exist
-                table = SQLDestination.create_table_if_not_exists(conn, stream)
+                # Check if there are any records to process
+                stream_size = ds.size(stream)
+                if stream_size == 0:
+                    progress.message("No records to process for this stream")
+                    continue
 
                 target_table_name = f"{stream.schema_name}.{stream.name}"
                 stage_table_name = f"{stream.schema_name}.__temp_{stream.name}"
-                
-                # delete records depending on sync mode
+
+                # drop target depending on sync mode
                 if self._mode.type == Mode.FULL_REFRESH:
-                    with conn.begin():
-                        conn.execute(table.delete())
+                    SQLDestination.drop_table(conn, target_table_name)
+
+                # create a table for the stream if it doesn't exist
+                SQLDestination.create_table_if_not_exists(conn, stream)
 
                 # sql to create staging table
                 stage_table_sql = SnowflakeSQLUtil.create_temp_table(

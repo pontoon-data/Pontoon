@@ -20,6 +20,10 @@ from pontoon.base import Progress
 from pontoon.cache.memory_cache import MemoryCache
 from pontoon.cache.sqlite_cache import SqliteCache
 from pontoon.base import Namespace, Stream, Record, Dataset, Cache, Mode, Source, Destination
+from pontoon.base import SourceConnectionFailed, SourceStreamDoesNotExist, SourceStreamInvalidSchema
+from pontoon.base import DestinationConnectionFailed, DestinationStreamInvalidSchema
+from pontoon.base import StreamMissingField
+
 
 __sources = {}
 __destinations = {}
