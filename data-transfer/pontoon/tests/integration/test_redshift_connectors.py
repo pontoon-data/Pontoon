@@ -2,7 +2,6 @@ import os
 import json
 import glob
 import uuid
-import psutil
 import pytest
 from datetime import datetime, timezone
 
@@ -195,7 +194,7 @@ class TestRedshiftConnectors:
         ds = get_memory_source(streams_config={'drop_fields': ['customer_id']}).read(progress_callback=read_progress_handler)
         dest.write(ds, progress_callback=write_progress_handler)
         dest.integrity().check_batch_volume(ds)
-        
+
         drop()
 
         # Full refresh 

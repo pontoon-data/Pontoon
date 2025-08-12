@@ -2,7 +2,6 @@ import os
 import json
 import glob
 import uuid
-import psutil
 import pytest
 from datetime import datetime, timezone
 
