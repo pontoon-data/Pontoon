@@ -2,10 +2,13 @@ from typing import List, Dict, Tuple, Generator, Any
 import pyarrow as pa
 from sqlalchemy import create_engine, inspect, MetaData, Table, Column, text, insert
 from sqlalchemy import Integer, BigInteger, SmallInteger, String, Text, Float, Numeric, Boolean, Date, Time, DateTime
+from sqlalchemy.exc import SQLAlchemyError, OperationalError, DatabaseError, InterfaceError, NoSuchTableError
 from snowflake.sqlalchemy import TIMESTAMP_LTZ, TIMESTAMP_NTZ, TIMESTAMP_TZ 
 from sqlalchemy.orm import sessionmaker
 
 from pontoon.base import Destination, Dataset, Stream, Record, Mode, Progress
+from pontoon.base import DestinationConnectionFailed, DestinationStreamInvalidSchema
+
 from pontoon.destination.integrity import SQLIntegrity
 
 
@@ -143,7 +146,7 @@ class SQLDestination(Destination):
             
             # Use flexible schema comparison that ignores column order
             if not SQLDestination.schemas_compatible(stream.schema, existing_schema):
-                raise ValueError(f"Existing schema for stream {name} does not match.")
+                raise DestinationStreamInvalidSchema(f"Existing schema for stream {name} does not match.")
 
         else:
 
@@ -167,7 +170,7 @@ class SQLDestination(Destination):
     def drop_table(conn, table_name:str):
         # drop a table
         with conn.begin():
-            conn.execute(text(f"DROP TABLE {table_name}"))    
+            conn.execute(text(f"DROP TABLE IF EXISTS {table_name}"))    
 
 
 
@@ -198,7 +201,10 @@ class SQLDestination(Destination):
 
 
     def _connect(self):
-        return self._engine.connect()
+        try:
+            return self._engine.connect()
+        except (InterfaceError, DatabaseError, OperationalError) as e:
+            raise DestinationConnectionFailed("Failed to connect to destination database") from e
 
 
     def _batch_to_rows(self, stream:Stream, batch:List[Record]):

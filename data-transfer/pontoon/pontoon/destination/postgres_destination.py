@@ -1,8 +1,14 @@
+import psycopg2
 from psycopg2 import sql
 from psycopg2.extras import execute_values
 from typing import List, Dict, Tuple, Generator, Any
 
+from sqlalchemy.exc import SQLAlchemyError, OperationalError, NoSuchTableError
 from pontoon.base import Destination, Dataset, Stream, Record, Progress, Mode
+from pontoon.base import DestinationConnectionFailed, \
+                        DestinationStreamInvalidSchema
+
+
 from pontoon.destination.sql_destination import SQLDestination
 
 
@@ -44,9 +50,9 @@ class PostgresSQLUtil:
     def drop_table(table_name:str):
         schema, table = PostgresSQLUtil.parse_table(table_name)
         if schema:
-            return sql.SQL("DROP TABLE {}.{}").format(schema, table)
+            return sql.SQL("DROP TABLE IF EXISTS {}.{}").format(schema, table)
         else:
-            return sql.SQL("DROP TABLE {}").format(table)
+            return sql.SQL("DROP TABLE IF EXISTS {}").format(table)
 
 
     @staticmethod
@@ -147,16 +153,26 @@ class PostgresDestination(SQLDestination):
                 progress.message("No records to process for this stream")
                 continue
 
-            with self._connect() as conn:
-                # create target table for the stream if it doesn't exist
-                table = SQLDestination.create_table_if_not_exists(conn, stream)
-
-
-            # using the raw psycopg2 connection for efficiency
-            conn = self._engine.raw_connection()
-                
             target_table_name = f"{stream.schema_name}.{stream.name}"
             stage_table_name = f"temp_{stream.schema_name}_{stream.name}"
+
+            # using the raw psycopg2 connection for efficiency
+            try:
+                conn = self._engine.raw_connection()
+            except OperationalError as e:
+                raise DestinationConnectionFailed("Could not connect to destination databse") from e
+
+            # Drop existing table if needed
+            if self._mode.type == Mode.FULL_REFRESH:
+                with conn.cursor() as cur:
+                    cur.execute(PostgresSQLUtil.drop_table(target_table_name))
+                    conn.commit()
+
+
+            with self._connect() as base_conn:
+                # create target table for the stream if it doesn't exist
+                table = SQLDestination.create_table_if_not_exists(base_conn, stream)
+
 
             # temporary staging table
             create_stage_sql = PostgresSQLUtil.create_temp_table(stage_table_name, target_table_name)
@@ -193,15 +209,6 @@ class PostgresDestination(SQLDestination):
             conn.commit()
             
             with conn.cursor() as cur:
-                # delete all records from the table
-                if self._mode.type == Mode.FULL_REFRESH:
-                    progress.message("Truncating target table")
-                    cur.execute(
-                        sql.SQL("DELETE FROM {}.{}").format(
-                            sql.Identifier(stream.schema_name),
-                            sql.Identifier(stream.name)
-                        )
-                    )
             
                 # upsert staging into target table
                 progress.message("Upserting records into target table")

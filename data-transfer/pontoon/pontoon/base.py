@@ -32,6 +32,16 @@ class Record:
         self.data = data
 
 
+
+class StreamError(Exception):
+    """ Base class for all Stream related exceptions """
+    pass
+
+class StreamMissingField(StreamError):
+    """ Raised when a stream schema is missing a field """
+    pass
+
+
 class Stream:
     """ 
         A class to represent a typed stream of records
@@ -108,7 +118,7 @@ class Stream:
 
 
     def _missing_field(self, field_name:str):
-        raise Exception(f"Stream {self.schema_name}.{self.name} does not have field: {field_name}")
+        raise StreamMissingField(f"Stream {self.schema_name}.{self.name} does not have field: {field_name}")
 
     
     def with_field(self, field_name:str, field_type:Any, value:Any) -> 'Stream':
@@ -135,7 +145,7 @@ class Stream:
     
     def drop_field(self, field_name:str) -> 'Stream':
         if field_name not in self.schema.names:
-            raise Exception(f"Stream {self.schema_name}.{self.name} does not have field: {field_name}")
+            raise StreamMissingField(f"Stream {self.schema_name}.{self.name} does not have field: {field_name}")
         field_idx = self.schema.get_field_index(field_name)
         self.schema = self.schema.remove(field_idx)
         self._drop_fields.append(field_idx)
@@ -418,6 +428,7 @@ class Integrity(ABC):
         pass
 
 
+
 class Source(ABC):
     """ Abstract base class to represent a data source connector """
 
@@ -441,6 +452,28 @@ class Source(ABC):
     def close(self):
         pass
 
+    
+class SourceError(Exception):
+    """Base exception for all Source-related errors."""
+    pass
+
+
+class SourceConnectionFailed(SourceError):
+    """Raised when the connection to the source fails."""
+    pass
+
+
+class SourceStreamDoesNotExist(SourceError):
+    """Raised when a requested stream does not exist in the source."""
+    pass
+
+
+class SourceStreamInvalidSchema(SourceError):
+    """Raised when the source stream has an invalid or unexpected schema."""
+    pass
+
+
+
 
 class Destination(ABC):
     """ Abstract base class to represent a data destination connector """
@@ -460,3 +493,20 @@ class Destination(ABC):
     @abstractmethod
     def close(self):
         pass
+
+
+class DestinationError(Exception):
+    """Base exception for all Destination-related errors."""
+    pass
+
+
+class DestinationConnectionFailed(DestinationError):
+    """Raised when the connection to the destination fails."""
+    pass
+
+
+class DestinationStreamInvalidSchema(DestinationError):
+    """Raised when the destination stream has an invalid or unexpected schema."""
+    pass
+
+

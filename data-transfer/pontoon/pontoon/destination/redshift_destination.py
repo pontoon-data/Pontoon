@@ -1,5 +1,5 @@
 from typing import List, Dict, Tuple, Generator, Any
-from sqlalchemy import text
+from sqlalchemy import text, MetaData, Table
 
 from pontoon.base import Destination, Dataset, Stream, Record, Progress, Mode
 from pontoon.source.sql_source import SQLUtil
@@ -76,16 +76,21 @@ class RedshiftDestination(SQLDestination):
                 if callable(progress_callback):
                     progress.subscribe(progress_callback)
 
-                # create a table for the stream if it doesn't exist
-                table = SQLDestination.create_table_if_not_exists(conn, stream)
-                
+                # Check if there are any records to process
+                stream_size = ds.size(stream)
+                if stream_size == 0:
+                    progress.message("No records to process for this stream")
+                    continue
+
                 target_table_name = f"{stream.schema_name}.{stream.name}"
                 stage_table_name = f"temp_{stream.schema_name}_{stream.name}"
 
                 if self._mode.type == Mode.FULL_REFRESH:
                     with conn.begin():
-                        # delete all records from the table
-                        conn.execute(table.delete())
+                        SQLDestination.drop_table(conn, target_table_name)       
+
+                # create a table for the stream if it doesn't exist
+                table = SQLDestination.create_table_if_not_exists(conn, stream)
 
                 # temporary staging table
                 create_stage_sql = RedshiftSQLUtil.create_temp_table(stage_table_name, target_table_name)
