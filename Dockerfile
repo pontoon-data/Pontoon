@@ -25,8 +25,8 @@ RUN apt-get update && \
     apt-get install -y \
     supervisor \
     redis-server \
-    postgresql \
-    postgresql-client \
+    postgresql-17 \
+    postgresql-client-17 \
     gcc \
     libpq-dev \
     curl \ 
@@ -83,7 +83,7 @@ ENV POSTGRES_USER=dev
 ENV POSTGRES_PASSWORD=dev
 ENV POSTGRES_DATABASE=pontoon
 
-ENV PATH="/usr/lib/postgresql/15/bin:$PATH"
+ENV PATH="/usr/lib/postgresql/17/bin:$PATH"
 RUN mkdir -p /var/lib/postgresql/data && \
     chown -R postgres:postgres /var/lib/postgresql
 USER postgres
