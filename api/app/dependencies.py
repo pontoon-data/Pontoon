@@ -96,8 +96,6 @@ def send_telemetry_event(
     try:
         if properties is None:
             properties = {}
-        # Remove IP address from properties
-        properties["$ip"] = "0.0.0.0"
         
         # Use the persistent anonymous UUID as distinct_id
         posthog.capture(
