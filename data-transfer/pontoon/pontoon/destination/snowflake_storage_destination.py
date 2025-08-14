@@ -3,6 +3,7 @@ from typing import List, Dict, Any
 from datetime import datetime
 import snowflake.connector
 from pontoon.base import Namespace, Destination, Stream, Dataset, Record, Progress
+from pontoon.base import DestinationConnectionFailed
 from pontoon.source.sql_source import SQLUtil
 from pontoon.destination import ObjectStoreBase
 from pontoon.destination.integrity import SMSIntegrity
@@ -27,14 +28,17 @@ class SnowflakeStorageDestination(ObjectStoreBase):
     
     def _get_snowflake_client(self):
         c = self._config.get('connect')
-        return snowflake.connector.connect(
-            user=c['user'],
-            password=c['access_token'],
-            account=c['account'],
-            warehouse=c['warehouse'],
-            database=c['database'],
-            schema=c['target_schema']
-        )
+        try:
+            return snowflake.connector.connect(
+                user=c['user'],
+                password=c['access_token'],
+                account=c['account'],
+                warehouse=c['warehouse'],
+                database=c['database'],
+                schema=c['target_schema']
+            )
+        except Exception as e:
+            raise DestinationConnectionFailed("Failed to connect to Snowflake") from e
 
     
     def _write_batch(self, stream:Stream, batch:List[Record], batch_index:int):

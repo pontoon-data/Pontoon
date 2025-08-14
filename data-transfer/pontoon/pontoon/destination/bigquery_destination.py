@@ -1,8 +1,10 @@
 import json
 from typing import List, Dict, Tuple, Generator, Any
-from sqlalchemy import create_engine, text
+from sqlalchemy import create_engine, inspect, MetaData, Table, text
 
 from pontoon.base import Destination, Dataset, Stream, Record, Progress, Mode
+from pontoon.base import DestinationConnectionFailed, DestinationStreamInvalidSchema
+
 from pontoon.source.sql_source import SQLUtil
 from pontoon.destination.sql_destination import SQLDestination
 from pontoon.destination.gcs_destination import GCSDestination, GCSConfig
@@ -72,6 +74,9 @@ class BigQueryDestination(SQLDestination):
 
         with self._connect() as conn:
 
+            insp = inspect(conn)
+            metadata_obj = MetaData()
+
             for stream in ds.streams:
 
                 # configure progress tracking
@@ -83,6 +88,11 @@ class BigQueryDestination(SQLDestination):
                 if callable(progress_callback):
                     progress.subscribe(progress_callback)
 
+                # Check if there are any records to process
+                stream_size = ds.size(stream)
+                if stream_size == 0:
+                    progress.message("No records to process for this stream")
+                    continue
 
                 # staging and target table names
                 target_table_name = f"{stream.schema_name}.{stream.name}"
@@ -100,6 +110,15 @@ class BigQueryDestination(SQLDestination):
                     )
                 )
 
+                # delete records depending on sync mode
+                if self._mode.type == Mode.FULL_REFRESH:
+                    progress.message("Dropping target table")
+                    SQLDestination.drop_table(conn, target_table_name)
+
+                # Drop staging table if it happens to exist from previous failed load
+                # BQ does not support TEMP tables, so we use a real table - can't assume it will be cleaned up
+                SQLDestination.drop_table(conn, stage_table_name)
+
                 progress.message("Running LOAD from GCS")
                 with conn.begin():
                     conn.execute(text(load_sql))
@@ -109,12 +128,19 @@ class BigQueryDestination(SQLDestination):
                 with conn.begin():
                     conn.execute(text(create_target_sql))
 
-                # delete records depending on sync mode
-                if self._mode.type == Mode.FULL_REFRESH:
-                    progress.message("Truncating target table")
-                    with conn.begin():
-                        conn.execute(text(f"DELETE FROM {target_table_name} WHERE 1=1"))
 
+                # Check that target and stage schemas are compatible 
+                target_table = Table(stream.name, metadata_obj, schema=stream.schema_name, autoload_with=insp)
+                target_table_schema = SQLDestination.table_ddl_to_schema(target_table.columns)
+
+                stage_table = Table(f"__temp_{stream.name}", metadata_obj, schema=stream.schema_name, autoload_with=insp)
+                stage_table_schema = SQLDestination.table_ddl_to_schema(stage_table.columns)
+            
+                # Use flexible schema comparison that ignores column order
+                if not SQLDestination.schemas_compatible(target_table_schema, stage_table_schema):
+                    raise DestinationStreamInvalidSchema(f"Existing schema for stream {stream.name} does not match.")
+
+                
                 # sql to MERGE the staging table into the target table
                 merge_sql = BigQuerySQLUtil.merge(
                     target_table_name,
