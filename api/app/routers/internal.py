@@ -64,8 +64,8 @@ def update_transfer_run(transfer_run_id:uuid.UUID, transfer_run:TransferRun.Upda
 
     # Get the source vendor types from the models transferred
     models = Destination.get(session, destination_id).models
-    source_ids = [Model.get(session, model_id).source_id for model_id in models]
-    source_vendor_types = set([Source.get(session, source_id).connection_info['vendor_type'] for source_id in source_ids])
+    source_ids = { Model.get(session, model_id).source_id for model_id in models }
+    source_vendor_types = { Source.get(session, source_id).connection_info['vendor_type'] for source_id in source_ids }
 
     if transfer_run_type == "transfer" and transfer_run.status == 'SUCCESS':
         send_telemetry_event(
