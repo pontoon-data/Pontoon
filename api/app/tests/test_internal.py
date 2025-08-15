@@ -56,7 +56,7 @@ def test_create_transfer_run():
     r = client.post(f"/internal/runs", json={
         "transfer_id": transfer_id,
         "status": "RUNNING",
-        "meta": {"arguments": ["a", "b", 3]}
+        "meta": {"arguments": {"a": "b", "c": 3}}
     })
 
     assert r.status_code == 200
@@ -74,5 +74,5 @@ def test_create_transfer_run():
     o = r.json()
     assert o['status'] == 'SUCCESS'
     assert o['output'] == {"records": 1000, "time": 3}
-    assert o['meta'] == {"arguments": ["a", "b", 3]}
+    assert o['meta'] == {"arguments": {"a": "b", "c": 3}}
     assert o['created_at'] != None
