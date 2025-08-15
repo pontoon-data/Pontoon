@@ -122,9 +122,6 @@ To view the Web UI: `localhost:3000`. To view the OpenAPI docs / test the API: `
 
 Check out the [transfer quick start guide](https://pontoon-data.github.io/Pontoon/getting-started/transfer-quick-start/) to add your first source and destination.
 
-> [!NOTE]
-> Pontoon collects anonymous usage data by default to help us improve the product. No sensitive data is collected, but if you'd like to disable this you can do so by setting the `PONTOON_TELEMETRY_DISABLED` environment variable to `true`.
-
 ## Running Pontoon with Docker Compose
 
 **Requirements:** [Docker Compose v2](https://docs.docker.com/compose/install/)
@@ -134,6 +131,9 @@ To build Pontoon from source, use Docker Compose.
 ```sh
 docker compose up --build
 ```
+
+> [!NOTE]
+> Pontoon collects anonymous usage data by default to help us improve the product. No sensitive data is collected, but if you'd like to disable this you can do so by setting the `PONTOON_TELEMETRY_DISABLED` environment variable to `true`.
 
 ## Creating Your First Data Export
 
