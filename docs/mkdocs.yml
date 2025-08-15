@@ -98,3 +98,6 @@ nav:
           - Amazon Redshift: sources-destinations/destinations/redshift.md
           - Google BigQuery: sources-destinations/destinations/bigquery.md
           - Postgres: sources-destinations/destinations/postgresql.md
+          - S3: sources-destinations/destinations/S3.md
+          - Google Cloud Storage: sources-destinations/destinations/google-cloud-storage.md
+          - Azure Blob Storage: sources-destinations/destinations/azure-blob-storage.md
