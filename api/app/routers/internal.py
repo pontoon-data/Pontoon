@@ -51,17 +51,40 @@ def update_transfer_run(transfer_run_id:uuid.UUID, transfer_run:TransferRun.Upda
     transfer_run = TransferRun.update(session, transfer_run_id, transfer_run)
 
     transfer_run_type = transfer_run.meta.get('arguments', {}).get('type')
+    if transfer_run_type != "transfer" or transfer_run.status == 'RUNNING':
+        return transfer_run
+
+    # Get the number of rows transferred
+    row_count = TransferRun.get_transfer_row_count(session, transfer_run_id)
+
+    # Get the destination vendor type
+    transfer_id = transfer_run.transfer_id
+    destination_id = Transfer.get(session, transfer_id).destination_id
+    destination_vendor_type = Destination.get(session, destination_id).connection_info['vendor_type']
+
+    # Get the source vendor types from the models transferred
+    models = Destination.get(session, destination_id).models
+    source_ids = [Model.get(session, model_id).source_id for model_id in models]
+    source_vendor_types = set([Source.get(session, source_id).connection_info['vendor_type'] for source_id in source_ids])
+
     if transfer_run_type == "transfer" and transfer_run.status == 'SUCCESS':
-        print("Sending transfer_run_success telemetry event")
         send_telemetry_event(
-            "transfer_run_success"
+            "transfer_run_success",
+            properties={
+                "rows_transferred": row_count,
+                "destination_vendor_type": destination_vendor_type,
+                "source_vendor_types": source_vendor_types
+            }
         )
     elif transfer_run_type == "transfer" and transfer_run.status == 'FAILURE':
-        print("Sending transfer_run_failure telemetry event")
         send_telemetry_event(
-            "transfer_run_failure"
+            "transfer_run_failure",
+            properties={
+                "rows_transferred": row_count,
+                "destination_vendor_type": destination_vendor_type,
+                "source_vendor_types": source_vendor_types
+            }
         )
-    print("telemetry event should have been sent")
     return transfer_run
 
 

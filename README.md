@@ -87,20 +87,17 @@ Pontoon is used by vendors (eg. Salesforce) to **provide data syncs** as a produ
 
 # Pontoon vs. Other ETL / Reverse-ETL Platforms
 
-|                                        | **Pontoon**   | Airbyte | Singer/Stitch      | Fivetran | Hightouch                 | Prequel | Bobsled |
-| ---------------------------------      | ------------- | ------- | ------------------ | -------- | ------------------------- | ------- | ------- |
-| **Open Source**                        | ✅ Yes         | ✅ Yes   | ✅ Singer only      | ❌ No     | ⚠️ Some SDKs              | ❌ No    | ❌ No    |
-| **Self-Hosted Option**                 | ✅ Yes         | ✅ Yes   | ✅ Yes              | ❌ No     | ✅ Yes                     | ✅ Yes    | ❌ No    |
-| **First-class Data Products**          | ✅ Yes         | ❌ No    | ❌ No               | ❌ No     | ⚠️ Possible (with effort) | ✅ Yes   | ✅ Yes   |
-| **Multi-Tenant Data Export**           | ✅ Yes         | ❌ No    | ❌ No               | ❌ No     | ⚠️ Custom                 | ✅ Yes   | ✅ Yes   |
-| **Direct Data Warehouse Integrations** | ✅ Yes         | ✅ Yes   | ⚠️ Destinations only     | ⚠️ Destinations only | ⚠️ Sources only          | ✅ Yes   | ✅ Yes |
-| **DBT Integration**                   | 🚧 Coming soon  | ❌ No    | ❌ No               | ⚠️ Limited | ✅ Yes | ❌ No | ❌ No |
-| **Bulk Transfers (millions/billions of rows)** | ✅ Yes   | ✅ Yes   | ⚠️ Possible        | ⚠️ Possible | ❌ No                    | ✅ Yes   | ✅ Yes |
-| **Full Database/Table Replication**         | ❌ No          | ✅ Yes   | ❌ No               | ❌ No | ❌ No                       | ❌ No     | ❌ No |  
-| **Free to Use**                        | ✅ Yes         | ✅ Yes   | ✅ Yes (Singer CLI) | ❌ No     | ⚠️ Limited                 | ❌ No    | ❌ No    |
-
-
-
+|                                                | **Pontoon**    | Airbyte | Singer/Stitch        | Fivetran             | Hightouch                 | Prequel | Bobsled |
+| ---------------------------------------------- | -------------- | ------- | -------------------- | -------------------- | ------------------------- | ------- | ------- |
+| **Open Source**                                | ✅ Yes         | ✅ Yes  | ✅ Singer only       | ❌ No                | ⚠️ Some SDKs              | ❌ No   | ❌ No   |
+| **Self-Hosted Option**                         | ✅ Yes         | ✅ Yes  | ✅ Yes               | ❌ No                | ✅ Yes                    | ✅ Yes  | ❌ No   |
+| **First-class Data Products**                  | ✅ Yes         | ❌ No   | ❌ No                | ❌ No                | ⚠️ Possible (with effort) | ✅ Yes  | ✅ Yes  |
+| **Multi-Tenant Data Export**                   | ✅ Yes         | ❌ No   | ❌ No                | ❌ No                | ⚠️ Custom                 | ✅ Yes  | ✅ Yes  |
+| **Direct Data Warehouse Integrations**         | ✅ Yes         | ✅ Yes  | ⚠️ Destinations only | ⚠️ Destinations only | ⚠️ Sources only           | ✅ Yes  | ✅ Yes  |
+| **DBT Integration**                            | 🚧 Coming soon | ❌ No   | ❌ No                | ⚠️ Limited           | ✅ Yes                    | ❌ No   | ❌ No   |
+| **Bulk Transfers (millions/billions of rows)** | ✅ Yes         | ✅ Yes  | ⚠️ Possible          | ⚠️ Possible          | ❌ No                     | ✅ Yes  | ✅ Yes  |
+| **Full Database/Table Replication**            | ❌ No          | ✅ Yes  | ❌ No                | ❌ No                | ❌ No                     | ❌ No   | ❌ No   |
+| **Free to Use**                                | ✅ Yes         | ✅ Yes  | ✅ Yes (Singer CLI)  | ❌ No                | ⚠️ Limited                | ❌ No   | ❌ No   |
 
 # Quick Start
 
@@ -118,11 +115,15 @@ docker run \
     ghcr.io/pontoon-data/pontoon/pontoon-unified:latest
 ```
 
-> Note: If you're using CMD or Powershell, run the command in one line, without `\`
+> [!NOTE]
+> If you're using CMD or Powershell, run the command in one line, without `\`
 
 To view the Web UI: `localhost:3000`. To view the OpenAPI docs / test the API: `localhost:8000/docs`.
 
 Check out the [transfer quick start guide](https://pontoon-data.github.io/Pontoon/getting-started/transfer-quick-start/) to add your first source and destination.
+
+> [!NOTE]
+> Pontoon collects anonymous usage data by default to help us improve the product. No sensitive data is collected, but if you'd like to disable this you can do so by setting the `PONTOON_TELEMETRY_DISABLED` environment variable to `true`.
 
 ## Running Pontoon with Docker Compose
 
