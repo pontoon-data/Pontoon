@@ -8,6 +8,7 @@ from pontoon.destination.redshift_destination import RedshiftDestination
 from pontoon.destination.bigquery_destination import BigQueryDestination
 from pontoon.destination.s3_destination import S3Destination
 from pontoon.destination.gcs_destination import GCSDestination
+from pontoon.destination.abs_destination import ABSDestination
 from pontoon.destination.snowflake_storage_destination import SnowflakeStorageDestination
 from pontoon.destination.snowflake_destination import SnowflakeDestination
 from pontoon.destination.postgres_destination import PostgresDestination
@@ -59,6 +60,7 @@ __destinations['destination-redshift'] = RedshiftDestination
 __destinations['destination-bigquery'] = BigQueryDestination
 __destinations['destination-s3'] = S3Destination
 __destinations['destination-gcs'] = GCSDestination
+__destinations['destination-abs'] = ABSDestination
 __destinations['destination-snowflake-storage'] = SnowflakeStorageDestination
 __destinations['destination-snowflake'] = SnowflakeDestination
 __destinations['destination-postgres'] = PostgresDestination
@@ -88,6 +90,7 @@ __vendor_destination_map = {
     'glue': 'destination-glue-s3',
     's3': 'destination-s3',
     'gcs': 'destination-gcs',
+    'abs': 'destination-abs',
     'postgresql': 'destination-postgres'
 }
 

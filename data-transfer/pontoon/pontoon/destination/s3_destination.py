@@ -2,6 +2,7 @@ import os
 from typing import List, Dict, Any
 import boto3
 from pontoon.base import Namespace, Destination, Stream, Dataset, Record, Progress
+from pontoon.base import DestinationError
 from pontoon.destination import ObjectStoreBase
 from pontoon.destination.integrity import S3Integrity
 
@@ -31,6 +32,8 @@ class S3Destination(ObjectStoreBase):
         # our s3 config
         self._s3_config = S3Config(config['connect'])
 
+        if self._format not in ['staging', 'hive']:
+            raise DestinationError(f'Format {self._format} is not supported by S3')
 
     def _get_s3_client(self):
         # get S3 client using configured auth type
@@ -48,6 +51,8 @@ class S3Destination(ObjectStoreBase):
             region_name=self._s3_config.region
         )
 
+    def _write_stream(self, stream:Stream):
+        pass
     
     def _write_batch(self, stream:Stream, batch:List[Record], batch_index:int):
        
@@ -62,14 +67,24 @@ class S3Destination(ObjectStoreBase):
         )
         
         # upload to s3
-        parquet_s3_path = ObjectStoreBase.get_object_filename(
-            self._s3_config, 
-            self._ds.namespace, 
-            stream, 
-            self._dt,
-            self._batch_id, 
-            batch_index
-        )
+        if self._format == 'staging':
+            parquet_s3_path = ObjectStoreBase.get_object_filename(
+                self._s3_config, 
+                self._ds.namespace, 
+                stream, 
+                self._dt,
+                self._batch_id, 
+                batch_index
+            )
+        elif self._format == 'hive':
+            parquet_s3_path = ObjectStoreBase.get_hive_filename(
+                self._s3_config, 
+                self._ds.namespace, 
+                stream, 
+                self._dt,
+                self._batch_id, 
+                batch_index
+            )
 
         s3.upload_file(parquet_file_path, self._s3_config.bucket_name, parquet_s3_path)
         

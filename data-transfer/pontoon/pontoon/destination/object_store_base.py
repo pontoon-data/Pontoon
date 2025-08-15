@@ -88,17 +88,50 @@ class ObjectStoreBase(Destination):
         # e.g. s3://bucket/events/postgres/pontoon__events/2025-01-10/1740773449235/
         return f"{config.scheme}://{config.bucket_name}/{ObjectStoreBase.get_object_path(config, namespace, stream, dt, batch_id)}"
 
-    
+
+    @staticmethod 
+    def get_hive_name(stream:Stream, dt:datetime, batch_id:str, batch_index:int):
+        # e.g. 20250701154312_1740773449235_0.parquet
+        return f"{dt.strftime('%Y%m%d%H%M%S')}_{batch_id}_{batch_index}.parquet"
+
+
+    @staticmethod
+    def get_hive_path(config:ObjectStoreConfig, namespace:Namespace, stream:Stream, dt:datetime, batch_id:str):
+        # e.g. events/events/dt=2025-01-10/
+        date = dt.strftime('%Y-%m-%d')
+        return f"{config.bucket_path}/{stream.name}/dt={date}/"
+
+
+    @staticmethod
+    def get_hive_filename(config:ObjectStoreConfig, namespace:Namespace, stream:Stream, dt:datetime, batch_id:str, batch_index:int):
+        # e.g. events/events/dt=2025-01-10/20250110154312_1740773449235_0.parquet
+        return f"{ObjectStoreBase.get_hive_path(config, namespace, stream, dt, batch_id)}{ObjectStoreBase.get_hive_name(stream, dt, batch_id, batch_index)}"
+
+
+    @staticmethod
+    def get_hive_path_uri(config:ObjectStoreConfig, namespace:Namespace, stream:Stream, dt:datetime, batch_id:str):
+        # e.g. s3://bucket/events/events/dt=2025-01-10/
+        return f"{config.scheme}://{config.bucket_name}/{ObjectStoreBase.get_hive_path(config, namespace, stream, dt, batch_id)}"
+
     
     def __init__(self, config):
         self._config = config
+        self._mode = config.get('mode')
         self._batch_size = config.get('batch_size', 10000)
+
+        # default format is as a staging store for transfers between other stores
+        # options are staging, hive  
+        self._format = config.get('connect').get('format', 'staging').lower()
         
         self._dt = None
         self._batch_id = None
         self._ds = None
         
     
+    @abstractmethod
+    def _write_stream(self, stream:Stream): pass
+    
+
     @abstractmethod
     def _write_batch(self, stream:Stream, batch:List[Record], batch_index:int): pass
 
@@ -121,6 +154,8 @@ class ObjectStoreBase(Destination):
             )
             if callable(progress_callback):
                 progress.subscribe(progress_callback)
+
+            self._write_stream(stream)
 
             batch = []
             batch_index = 0
