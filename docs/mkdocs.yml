@@ -86,6 +86,7 @@ nav:
           - Transfer Quick Start: getting-started/transfer-quick-start.md
       - Other:
           - Architecture: getting-started/architecture.md
+          - Telemetry: getting-started/telemetry.md
   - Sources & Destinations:
       - Overview: sources-destinations/overview.md
       - Sources:

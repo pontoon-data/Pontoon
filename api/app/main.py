@@ -6,7 +6,7 @@ from sqlmodel import Session
 from fastapi import FastAPI, Depends, Request
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.dependencies import get_settings, get_session
+from app.dependencies import get_settings, get_session, init_telemetry
 from app.routers import sources, models, recipients, destinations, transfers, internal
 
 settings = get_settings()
@@ -36,6 +36,7 @@ logger.addHandler(handler)
 
 
 app = FastAPI()
+init_telemetry()
 app.include_router(sources.router)
 app.include_router(models.router)
 app.include_router(recipients.router)

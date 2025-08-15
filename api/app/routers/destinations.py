@@ -6,7 +6,7 @@ from fastapi import HTTPException, Depends, Query, APIRouter, Security, status
 
 from app.models import Auth, Task, Destination, ScheduleModel, TransferRun, Transfer as TransferModel
 from app.routers.common import create_transfer_task, transfer_task_status
-from app.dependencies import get_session, get_settings, get_auth
+from app.dependencies import get_session, get_settings, get_auth, send_telemetry_event
 from app.config import Settings
 
 from pontoon import Mode
@@ -140,13 +140,21 @@ def list_destinations(session = Depends(get_session), auth:Auth = Security(get_a
 @router.post("", response_model=Destination.Public, status_code=status.HTTP_201_CREATED)
 def create_destination(destination:Destination.Create, session=Depends(get_session), auth:Auth = Security(get_auth)):
     try:
-        model = Destination.create(
+        created_destination = Destination.create(
             session,
             destination,
             created_by=auth.sub_uuid()
         )
         
-        return model
+        # Send telemetry event
+        send_telemetry_event(
+            "destination_created",
+            properties={
+                "vendor_type": created_destination.vendor_type
+            }
+        )
+        
+        return created_destination
 
     except Destination.Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
@@ -256,7 +264,35 @@ def run_destination_transfer(destination_id:uuid.UUID, session=Depends(get_sessi
 
 @router.get("/{destination_id}/check/{task_id}", response_model=Task.Public)
 def destination_check_status(destination_id:uuid.UUID, task_id:uuid.UUID, session=Depends(get_session)):
-    return transfer_task_status(session, task_id)
+    task = transfer_task_status(session, task_id)
+
+    if task.meta.get('type') != 'destination-check':
+        raise HTTPException(status_code=400, detail="Task is not a destination check")
+    
+    if task.meta.get('destination_id') != str(destination_id):
+        raise HTTPException(status_code=400, detail="Task does not belong to this destination")
+    
+    destination = Destination.get(session, destination_id)
+    if task.status == 'COMPLETE' and task.output.get('success') == True:
+        try:
+            send_telemetry_event(
+                "destination_test_connection_success",
+                properties={
+                    "vendor_type": destination.vendor_type
+                }
+            )
+        except Exception as e:
+            print(f"Telemetry error in destination check status: {e}")
+    
+    if task.status == 'COMPLETE' and task.output.get('success') == False:
+        send_telemetry_event(
+            "destination_test_connection_failure",
+            properties={
+                "vendor_type": destination.vendor_type
+            }
+        )
+
+    return task
 
 
 @router.delete("/{destination_id}")

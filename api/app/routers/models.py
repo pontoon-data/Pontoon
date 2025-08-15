@@ -3,7 +3,7 @@ import uuid
 from typing import List, Annotated
 from fastapi import HTTPException, Depends, Query, APIRouter, Security, status
 
-from app.dependencies import get_session, get_auth
+from app.dependencies import get_session, get_auth, send_telemetry_event
 from app.models import Auth, Model
 
 router = APIRouter(
@@ -22,11 +22,18 @@ def get_model_by_id(session, model_id:uuid.UUID):
 @router.post("", response_model=Model.Public, status_code=status.HTTP_201_CREATED)
 def create_model(model:Model.Create, session=Depends(get_session), auth:Auth = Security(get_auth)):
     try:
-        return Model.create(
+        created_model = Model.create(
             session, 
             model,
             created_by=auth.sub_uuid()
         )
+        
+        # Send telemetry event
+        send_telemetry_event(
+            "model_created"
+        )
+        
+        return created_model
     except Model.Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 

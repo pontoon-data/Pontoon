@@ -16,6 +16,7 @@ ENV CELERY_BROKER_URL=redis://localhost:6379/0
 ENV CELERY_RESULT_BACKEND=redis://localhost:6379/1
 ENV PONTOON_API_ENDPOINT=http://localhost:8000
 ENV ALLOW_ORIGIN=http://localhost:3000
+ENV POSTHOG_PAPIK=phc_G6QfHRlBV14HWfamqQqCnH4Zzm3JJ2uDMsxhTYohzZ9
 
 
 WORKDIR /pontoon
