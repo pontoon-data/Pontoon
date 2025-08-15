@@ -133,7 +133,7 @@ docker compose up --build
 ```
 
 > [!NOTE]
-> Pontoon collects anonymous usage data by default to help us improve the product. No sensitive data is collected, but if you'd like to disable this you can do so by setting the `PONTOON_TELEMETRY_DISABLED` environment variable to `true`.
+> Pontoon collects anonymous usage data by default to help us improve the product. No sensitive data is collected, but if you'd like to disable this you can do so by setting the `PONTOON_TELEMETRY_DISABLED` environment variable to `true`. Please refer to our [telemetry docs](https://pontoon-data.github.io/Pontoon/getting-started/telemetry/) for more information.
 
 ## Creating Your First Data Export
 
