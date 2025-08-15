@@ -49,6 +49,9 @@ def create_transfer_run(transfer_run:TransferRun.Create, session=Depends(get_ses
 @router.put("/runs/{transfer_run_id}", response_model=TransferRun.Model)
 def update_transfer_run(transfer_run_id:uuid.UUID, transfer_run:TransferRun.Update, session=Depends(get_session)):
     transfer_run = TransferRun.update(session, transfer_run_id, transfer_run)
+    
+    if transfer_run.meta is None:
+        return transfer_run
 
     transfer_run_type = transfer_run.meta.get('arguments', {}).get('type')
     if transfer_run_type != "transfer" or transfer_run.status == 'RUNNING':
