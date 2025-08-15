@@ -27,7 +27,9 @@ Pontoon is an open source, self-hosted data export platform that is built from t
 
 - **Data Warehouses**: Snowflake, Google BigQuery, Amazon Redshift
 - **SQL Databases**: Postgres
-- _Coming Soon - Object Storage_: Amazon S3, Google Cloud Storage
+- **Object Storage**: Amazon S3, Google Cloud Storage, Azure Blob Storage
+- _Coming Soon - Data Lake Table Formats: Iceberg, Delta Lake and Hudi_ 
+
 
 ### The Problem with APIs & Data
 
