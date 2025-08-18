@@ -20,17 +20,17 @@ RUN apt-get update \
     && apt-get -y install libpq-dev gcc \
     && pip install psycopg2
 
+# Copy and install the transfer library wheel
+COPY --from=transfer-builder /transfer-build/dist/*.whl /api/dist/
+RUN pip install --no-cache-dir /api/dist/pontoon-*.whl
+
 # Build the API app
 COPY ./api/pyproject.toml /api/pyproject.toml
 COPY ./api/app /api/app
 COPY ./api/db /api/db
 RUN pip install build && python -m build --wheel
 
-# Copy the transfer library wheel into dist
-COPY --from=transfer-builder /transfer-build/dist/*.whl /api/dist/
-
 RUN pip install --no-cache-dir /api/dist/app-*.whl
-RUN pip install --no-cache-dir /api/dist/pontoon-*.whl
 RUN pip install SQLAlchemy==2.0.41
 
 EXPOSE 8000

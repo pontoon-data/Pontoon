@@ -369,6 +369,10 @@ class Transfer:
     def set_organization(self, organization_id:str) -> 'Transfer':
         # set the org id for this transfer
         return self.set_argument('--organization-id', organization_id)
+    
+    def set_execution_id(self, execution_id:str) -> 'Transfer':
+        # set the execution id for this transfer
+        return self.set_argument('--execution-id', execution_id)
 
 
     def set_argument(self, arg_name:str, arg_value) -> 'Transfer':

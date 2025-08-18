@@ -255,7 +255,9 @@ const TransferTable = ({ schedule, id }) => {
     isLoading: transfersLoading,
     isValidating: transfersValidating,
     mutate: mutateTransfers,
-  } = useSWR(`/transfers?destination_id=${id}`, getRequest);
+  } = useSWR(`/transfers?destination_id=${id}`, getRequest, {
+    refreshInterval: 3000,
+  });
 
   const { trigger: triggerRerunTransfer } = useSWRMutation(
     `/transfers/:id/rerun`,

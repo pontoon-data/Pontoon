@@ -79,6 +79,9 @@ def rerun_transfer(
             raise TransferRun.Exception("Transfer run does not have arguments; can't re-run")
 
         args = meta.get('arguments', {})
+        execution_id = meta.get('execution_id', None)
+        if execution_id is None:
+            raise TransferRun.Exception("Transfer run does not have an execution ID; can't re-run")
 
         # kick off a new transfer
         if settings.skip_transfers != True:
@@ -88,6 +91,7 @@ def rerun_transfer(
             new_run.set_destination(str(destination.destination_id))
             new_run.set_mode(Mode(args.get('mode', {})))
             new_run.set_models(args.get('models', []))
+            new_run.set_execution_id(execution_id)
             new_run.run(expedited=False)
 
         return {"ok": True}
