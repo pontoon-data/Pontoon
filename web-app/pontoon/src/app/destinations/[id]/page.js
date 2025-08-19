@@ -269,28 +269,30 @@ const TransferTable = ({ schedule, id }) => {
     runDestinationRequest
   );
 
-  const refreshTransfers = () => {
-    mutateTransfers();
-  };
+  // const refreshTransfers = () => {
+  //   mutateTransfers();
+  // };
 
-  const autoRefresh = () => {
-    const intervalId = setInterval(refreshTransfers, 3000);
-    // Stop after 5 min
-    setTimeout(() => {
-      clearInterval(intervalId);
-    }, 60000 * 5);
-  };
+  // const autoRefresh = () => {
+  //   const intervalId = setInterval(refreshTransfers, 3000);
+  //   // Stop after 5 min
+  //   setTimeout(() => {
+  //     clearInterval(intervalId);
+  //   }, 60000 * 5);
+  // };
 
   const rerunTransfer = async (transferRunId) => {
     triggerRerunTransfer(transferRunId);
     setOpenSuccess(true);
-    autoRefresh();
+    mutateTransfers();
+    // autoRefresh();
   };
 
   const runDestination = async (destinationId) => {
     triggerRunDestination(destinationId);
     setOpenSuccess(true);
-    autoRefresh();
+    mutateTransfers();
+    // autoRefresh();
   };
 
   const flattenTransferRuns = (transfers) => {
@@ -313,34 +315,57 @@ const TransferTable = ({ schedule, id }) => {
     });
 
     // Process each execution group
-    for (const transfers of executionsMap.values()) {
-      const retryMaxAttempts = transfers[0].meta.retry_max_attempts;
-      const statuses = transfers.map((t) => t.status);
+    for (const transferFromExecutionGroup of executionsMap.values()) {
+      // Get the most recent transfer from the execution group
+      const mostRecentTransfer = transferFromExecutionGroup.reduce(
+        (latest, item) => {
+          if (!latest) return item;
+          return new Date(item.modified_at) > new Date(latest.modified_at)
+            ? item
+            : latest;
+        },
+        null
+      );
 
-      // Prioritize running transfers
-      const runningTransfer = transfers.find((t) => t.status === "RUNNING");
-      if (runningTransfer) {
-        flatTransfers.push(runningTransfer);
-        continue;
-      }
+      flatTransfers.push(mostRecentTransfer);
 
-      const successTransfer = transfers.find((t) => t.status === "SUCCESS");
-      const latestTransfer = transfers[transfers.length - 1];
+      // const retryMaxAttempts = transfers[0].meta.retry_max_attempts;
+      // const statuses = transfers.map((t) => t.status);
 
-      if (transfers.length === retryMaxAttempts) {
-        // All attempts used – show success if available, otherwise show latest failure
-        flatTransfers.push(successTransfer || latestTransfer);
-      } else if (!successTransfer) {
-        // Still retrying – mark latest attempt as retrying
-        flatTransfers.push({ ...latestTransfer, status: "RETRYING" });
-      } else {
-        // Successfully completed
-        flatTransfers.push(successTransfer);
-      }
+      // // Prioritize running transfers
+      // const runningTransfer = transfers.find((t) => t.status === "RUNNING");
+      // if (runningTransfer) {
+      //   flatTransfers.push(runningTransfer);
+      //   continue;
+      // }
+
+      // const successTransfer = transfers.find((t) => t.status === "SUCCESS");
+      // const latestTransfer = transfers[transfers.length - 1];
+
+      // if (transfers.length === retryMaxAttempts) {
+      //   // All attempts used – show success if available, otherwise show latest failure
+      //   flatTransfers.push(successTransfer || latestTransfer);
+      // } else if (!successTransfer) {
+      //   // Still retrying – mark latest attempt as retrying
+      //   flatTransfers.push({ ...latestTransfer, status: "RETRYING" });
+      // } else {
+      //   // Successfully completed
+      //   flatTransfers.push(successTransfer);
+      // }
     }
 
     return flatTransfers;
   };
+
+  const flatTransfers = transfers ? flattenTransferRuns(transfers) : [];
+
+  if (transfersError) {
+    return <Alert severity="error">Error with API</Alert>;
+  }
+
+  if (transfersLoading) {
+    return <LinearProgress color="inherit" />;
+  }
 
   return (
     <Stack>
@@ -398,6 +423,16 @@ const TransferTable = ({ schedule, id }) => {
                 Duration
               </Typography>
             </TableCell>
+            <TableCell>
+              <Typography variant="subtitle2" fontWeight={600}>
+                Data Transfer Interval
+              </Typography>
+            </TableCell>
+            {/* <TableCell>
+              <Typography variant="subtitle2" fontWeight={600}>
+                Data Transfer Interval End
+              </Typography>
+            </TableCell> */}
             <TableCell
               sx={{
                 padding: "0",
@@ -419,12 +454,8 @@ const TransferTable = ({ schedule, id }) => {
             numRows={4}
             numColumns={3}
           >
-            {(() => {
-              if (!transfers) return;
-
-              const flatTransfers = flattenTransferRuns(transfers);
-
-              return flatTransfers.map((transfer, idx) => (
+            {flatTransfers &&
+              flatTransfers.map((transfer, idx) => (
                 <TableRow
                   key={idx}
                   hover={true}
@@ -469,11 +500,13 @@ const TransferTable = ({ schedule, id }) => {
                   <TableCell>
                     <Typography noWrap variant="subtitle2" fontWeight={600}>
                       {transfer.created_at
-                        ? dayjs(transfer.created_at).format("LLL z").toString()
+                        ? dayjs(transfer.created_at)
+                            .format("MMM D, h:mm A z")
+                            .toString()
                         : ""}
                       {transfer.scheduled_at
                         ? dayjs(transfer.scheduled_at)
-                            .format("LLLL z")
+                            .format("ddd, MMM D, h:mm A z")
                             .toString()
                         : ""}
                     </Typography>
@@ -483,7 +516,9 @@ const TransferTable = ({ schedule, id }) => {
                     <Typography noWrap variant="subtitle2" fontWeight={600}>
                       {transfer.status == "SUCCESS" ||
                       transfer.status == "FAILURE"
-                        ? dayjs(transfer.modified_at).format("LTS").toString()
+                        ? dayjs(transfer.modified_at)
+                            .format("MMM D, h:mm A z")
+                            .toString()
                         : ""}
                     </Typography>
                   </TableCell>
@@ -514,6 +549,39 @@ const TransferTable = ({ schedule, id }) => {
                     </Typography>
                   </TableCell>
 
+                  <TableCell>
+                    <Typography noWrap variant="subtitle2" fontWeight={600}>
+                      {transfer?.meta?.arguments?.mode
+                        ? `${dayjs(transfer.meta.arguments.mode.start)
+                            .format("MMM D, h:mm A z")
+                            .toString()} - ${dayjs(
+                            transfer.meta.arguments.mode.end
+                          )
+                            .format("MMM D, h:mm A z")
+                            .toString()}`
+                        : ""}
+                    </Typography>
+                  </TableCell>
+
+                  {/* <TableCell>
+                    <Typography noWrap variant="subtitle2" fontWeight={600}>
+                      {transfer?.meta?.arguments?.mode?.start
+                        ? dayjs(transfer.meta.arguments.mode.start)
+                            .format("MMM D, h:mm A z")
+                            .toString()
+                        : ""}
+                    </Typography>
+                  </TableCell>
+                  <TableCell>
+                    <Typography noWrap variant="subtitle2" fontWeight={600}>
+                      {transfer?.meta?.arguments?.mode?.end
+                        ? dayjs(transfer.meta.arguments.mode.end)
+                            .format("MMM D, h:mm A z")
+                            .toString()
+                        : ""}
+                    </Typography>
+                  </TableCell> */}
+
                   <TableCell align="right">
                     {(transfer.status == "SUCCESS" ||
                       transfer.status == "FAILURE") && (
@@ -543,15 +611,9 @@ const TransferTable = ({ schedule, id }) => {
                         Run Now
                       </Button>
                     )}
-                    <Tooltip title="Options" placement="right">
-                      <IconButton>
-                        <IconDotsVertical />
-                      </IconButton>
-                    </Tooltip>
                   </TableCell>
                 </TableRow>
-              ));
-            })()}
+              ))}
           </TableBodyWrapper>
         </TableBody>
       </Table>

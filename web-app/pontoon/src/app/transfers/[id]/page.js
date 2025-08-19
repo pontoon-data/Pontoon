@@ -25,10 +25,14 @@ import dayjs from "dayjs";
 import LocalizedFormat from "dayjs/plugin/localizedFormat";
 import timezone from "dayjs/plugin/timezone";
 import advancedFormat from "dayjs/plugin/advancedFormat";
+import Duration from "dayjs/plugin/duration";
+import RelativeTime from "dayjs/plugin/relativeTime";
 
 dayjs.extend(LocalizedFormat);
 dayjs.extend(timezone);
 dayjs.extend(advancedFormat);
+dayjs.extend(Duration);
+dayjs.extend(RelativeTime);
 
 const TransferDetails = () => {
   const params = useParams();
@@ -118,18 +122,39 @@ const TransferDetails = () => {
     return status;
   };
 
+  const transferRunStartTime = transferRun?.meta?.arguments?.mode?.start;
+  const transferRunEndTime = transferRun?.meta?.arguments?.mode?.end;
+
   const dataForTable = [
-    ["Transfer Run ID", transferRun.transfer_run_id],
-    ["Transfer ID", transferRun.transfer_id],
     ["Status", getStatus(transferRun.status)],
-    ["Created At", dayjs(transferRun.created_at).format("LLL z").toString()],
-    ["Modified At", dayjs(transferRun.modified_at).format("LLL z").toString()],
+    [
+      "Duration",
+      dayjs
+        .duration(dayjs(transferRun.modified_at).diff(transferRun.created_at))
+        .humanize(),
+    ],
+    [
+      "Transfer Run Start Time",
+      dayjs(transferRun.created_at).format("MMM D, h:mm:ss A z").toString(),
+    ],
+    [
+      "Transfer Run End Time",
+      dayjs(transferRun.modified_at).format("MMM D, h:mm:ss A z").toString(),
+    ],
+    [
+      "Data Transfer Interval",
+      transferRunStartTime && transferRunEndTime
+        ? `${dayjs(transferRunStartTime).format("MMM D, h:mm A z")} - ${dayjs(
+            transferRunEndTime
+          ).format("MMM D, h:mm A z")}`
+        : "N/A",
+    ],
+    ["Transfer Run ID", transferRun.transfer_run_id],
   ];
 
   return (
     <DashboardCard
       title={`Transfer Run: ${transferRun.transfer_run_id}`}
-      subtitle={`Status: ${getStatus(transferRun.status)}`}
       topContent={
         <Button
           variant="contained"
@@ -214,7 +239,7 @@ const TransferDetails = () => {
                   </TableCell>
                   <TableCell>
                     <Typography variant="subtitle2" fontWeight={600}>
-                      Created At
+                      Transfer Started At
                     </Typography>
                   </TableCell>
                   <TableCell sx={{ borderTopRightRadius: "5pt" }} />
