@@ -219,7 +219,9 @@ class TransferCommand(Command):
         schedule_hour = schedule.get('hour', 0)
         schedule_min = schedule.get('minute', 0)
 
-        end_time = self._now.replace(hour=schedule_hour, minute=schedule_min, microsecond=0)
+        end_time = self._now.replace(minute=schedule_min, second=0, microsecond=0)
+        if period != Mode.HOURLY:
+            end_time = end_time.replace(hour=schedule_hour)
         
         if period == Mode.WEEKLY:
             begin_time = end_time - timedelta(days=7, hours=12)
