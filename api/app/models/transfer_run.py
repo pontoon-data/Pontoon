@@ -70,15 +70,34 @@ class TransferRun:
 
 
     @staticmethod
-    def list(session, destination_id:uuid.UUID, offset:int, limit:int) -> List[Model]: 
+    def list(session, offset:int, limit:int, destination_id:uuid.UUID, execution_id:uuid.UUID = None) -> List[Model]: 
+        """
+        List TransferRuns with optional filtering by destination_id and/or execution_id.
+        
+        Args:
+            session: Database session
+            offset: Number of records to skip for pagination
+            limit: Maximum number of records to return
+            destination_id: Filter by destination ID
+            execution_id: Optional filter by execution_id from meta field
+            
+        Returns:
+            List[Model]: List of TransferRun models matching the filters
+        """
         stmt = (
             select(TransferRun.Model)
             .join(Transfer.Model, TransferRun.Model.transfer_id == Transfer.Model.transfer_id)
             .where(Transfer.Model.destination_id == destination_id)
-            .order_by(TransferRun.Model.created_at.desc())
-            .offset(offset)
-            .limit(limit)
         )
+        
+        # Apply execution_id filter if provided
+        if execution_id is not None:
+            stmt = stmt.where(
+                (TransferRun.Model.meta.is_not(None)) &
+                (TransferRun.Model.meta['execution_id'].as_string() == str(execution_id))
+            )
+        
+        stmt = stmt.order_by(TransferRun.Model.created_at.desc()).offset(offset).limit(limit)
         return session.exec(stmt).all()
 
 

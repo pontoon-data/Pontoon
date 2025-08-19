@@ -9,6 +9,7 @@ export async function getRequest(url) {
       const error = new Error(
         "An error occurred while fetching the data: " + url
       );
+      console.log(res);
       // Attach extra info to the error object.
       error.info = await res.json();
       error.status = res.status;
