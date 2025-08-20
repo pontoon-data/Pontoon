@@ -122,8 +122,21 @@ const TransferDetails = () => {
     return status;
   };
 
-  const transferRunStartTime = transferRun?.meta?.arguments?.mode?.start;
-  const transferRunEndTime = transferRun?.meta?.arguments?.mode?.end;
+  const getDataTransferInterval = (transferMode) => {
+    if (transferMode?.type === "FULL_REFRESH") {
+      return `Full Refresh at ${dayjs(transferRun.created_at)
+        .format("MMM D, h:mm:ss A z")
+        .toString()}`;
+    } else if (transferMode?.type === "INCREMENTAL") {
+      return `${dayjs(transferMode?.start).format(
+        "MMM D, h:mm:ss A z"
+      )} - ${dayjs(transferMode?.end).format("MMM D, h:mm:ss A z")}`;
+    }
+    return "N/A";
+  };
+  const dataTransferInterval = getDataTransferInterval(
+    transferRun?.meta?.arguments?.mode
+  );
 
   const dataForTable = [
     ["Status", getStatus(transferRun.status)],
@@ -141,14 +154,7 @@ const TransferDetails = () => {
       "Transfer Run End Time",
       dayjs(transferRun.modified_at).format("MMM D, h:mm:ss A z").toString(),
     ],
-    [
-      "Data Transfer Interval",
-      transferRunStartTime && transferRunEndTime
-        ? `${dayjs(transferRunStartTime).format("MMM D, h:mm A z")} - ${dayjs(
-            transferRunEndTime
-          ).format("MMM D, h:mm A z")}`
-        : "N/A",
-    ],
+    ["Data Transfer Interval", dataTransferInterval],
     ["Transfer Run ID", transferRun.transfer_run_id],
   ];
 
