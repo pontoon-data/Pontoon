@@ -94,6 +94,7 @@ services:
       - app-network
     depends_on:
       - redis
+    restart: unless-stopped
 
 volumes:
   postgres-data:

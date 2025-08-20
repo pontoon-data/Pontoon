@@ -269,18 +269,6 @@ const TransferTable = ({ schedule, id }) => {
     runDestinationRequest
   );
 
-  // const refreshTransfers = () => {
-  //   mutateTransfers();
-  // };
-
-  // const autoRefresh = () => {
-  //   const intervalId = setInterval(refreshTransfers, 3000);
-  //   // Stop after 5 min
-  //   setTimeout(() => {
-  //     clearInterval(intervalId);
-  //   }, 60000 * 5);
-  // };
-
   const rerunTransfer = async (transferRunId) => {
     triggerRerunTransfer(transferRunId);
     setOpenSuccess(true);
@@ -428,11 +416,6 @@ const TransferTable = ({ schedule, id }) => {
                 Data Transfer Interval
               </Typography>
             </TableCell>
-            {/* <TableCell>
-              <Typography variant="subtitle2" fontWeight={600}>
-                Data Transfer Interval End
-              </Typography>
-            </TableCell> */}
             <TableCell
               sx={{
                 padding: "0",
@@ -506,7 +489,7 @@ const TransferTable = ({ schedule, id }) => {
                         : ""}
                       {transfer.scheduled_at
                         ? dayjs(transfer.scheduled_at)
-                            .format("ddd, MMM D, h:mm A z")
+                            .format("MMM D, h:mm A z")
                             .toString()
                         : ""}
                     </Typography>
@@ -563,25 +546,6 @@ const TransferTable = ({ schedule, id }) => {
                     </Typography>
                   </TableCell>
 
-                  {/* <TableCell>
-                    <Typography noWrap variant="subtitle2" fontWeight={600}>
-                      {transfer?.meta?.arguments?.mode?.start
-                        ? dayjs(transfer.meta.arguments.mode.start)
-                            .format("MMM D, h:mm A z")
-                            .toString()
-                        : ""}
-                    </Typography>
-                  </TableCell>
-                  <TableCell>
-                    <Typography noWrap variant="subtitle2" fontWeight={600}>
-                      {transfer?.meta?.arguments?.mode?.end
-                        ? dayjs(transfer.meta.arguments.mode.end)
-                            .format("MMM D, h:mm A z")
-                            .toString()
-                        : ""}
-                    </Typography>
-                  </TableCell> */}
-
                   <TableCell align="right">
                     {(transfer.status == "SUCCESS" ||
                       transfer.status == "FAILURE") && (
@@ -598,7 +562,7 @@ const TransferTable = ({ schedule, id }) => {
                       </Button>
                     )}
 
-                    {transfer.status == "SCHEDULED" && (
+                    {/* {transfer.status == "SCHEDULED" && (
                       <Button
                         variant="outlined"
                         size="small"
@@ -610,7 +574,7 @@ const TransferTable = ({ schedule, id }) => {
                       >
                         Run Now
                       </Button>
-                    )}
+                    )} */}
                   </TableCell>
                 </TableRow>
               ))}

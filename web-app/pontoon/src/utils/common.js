@@ -100,6 +100,18 @@ export const getScheduleText = (schedule) => {
 };
 
 export const getNextRunTime = (schedule) => {
+  if (schedule.frequency === "HOURLY") {
+    const now = new Date();
+    const nextHour = new Date(now);
+
+    // Increment the hour by 1
+    nextHour.setHours(now.getHours() + 1);
+
+    // Zero out minutes, seconds, milliseconds
+    nextHour.setMinutes(0, 0, 0);
+    return nextHour.toISOString();
+  }
+
   // Set default values for day, hour, and minute
   const day = schedule.day ?? 0; // Default to Sunday if not provided
   const hour = schedule.hour ?? 0; // Default to 0 if not provided
