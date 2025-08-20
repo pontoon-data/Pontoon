@@ -14,6 +14,9 @@ import {
   IconButton,
   CircularProgress,
   LinearProgress,
+  RadioGroup,
+  FormControlLabel,
+  Radio,
 } from "@mui/material";
 import Snackbar from "@mui/material/Snackbar";
 import { IconDotsVertical } from "@tabler/icons-react";
@@ -44,6 +47,7 @@ import Duration from "dayjs/plugin/duration";
 import RelativeTime from "dayjs/plugin/relativeTime";
 import timezone from "dayjs/plugin/timezone";
 import advancedFormat from "dayjs/plugin/advancedFormat";
+import utc from "dayjs/plugin/utc";
 import TableBodyWrapper from "@/app/components/shared/TableBodyWrapper";
 import { getScheduleText, getNextRunTime } from "@/utils/common";
 import {
@@ -52,12 +56,19 @@ import {
   rerunTransferRequest,
   runDestinationRequest,
 } from "@/app/api/requests";
+import { Form, Formik } from "formik";
+import * as Yup from "yup";
+import FormRadioGroup from "@/app/components/forms/FormRadioGroup";
+import { DateTimePicker } from "@mui/x-date-pickers/DateTimePicker";
+import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
+import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 
 dayjs.extend(LocalizedFormat);
 dayjs.extend(RelativeTime);
 dayjs.extend(Duration);
 dayjs.extend(timezone);
 dayjs.extend(advancedFormat);
+dayjs.extend(utc);
 
 const getDataForTable = (destinationData, recipientData, modelsData) => {
   const destination = destinationData;
@@ -176,6 +187,8 @@ const DestinationDetails = () => {
   );
   const router = useRouter();
   const [tab, setTab] = useState("1");
+  const [openSuccess, setOpenSuccess] = useState(false);
+
   const handleTabChange = (event, newValue) => {
     setTab(newValue);
   };
@@ -209,20 +222,41 @@ const DestinationDetails = () => {
         </Button>
       }
     >
+      <Snackbar
+        open={openSuccess}
+        onClose={() => setOpenSuccess(false)}
+        anchorOrigin={{ vertical: "top", horizontal: "center" }}
+        autoHideDuration={6000}
+        severity="success"
+      >
+        <Alert
+          onClose={() => setOpenSuccess(false)}
+          severity="success"
+          variant="filled"
+        >
+          Transfer started
+        </Alert>
+      </Snackbar>
+
       <TabContext value={tab}>
         <Box sx={{ borderBottom: 1, borderColor: "divider" }}>
           <TabList onChange={handleTabChange} aria-label="lab API tabs example">
             <Tab label="Transfers" value="1" />
-            <Tab label="Details" value="2" />
+            <Tab label="Backfill" value="2" />
+            <Tab label="Details" value="3" />
           </TabList>
         </Box>
         <TabPanel value="1">
           <TransferTable
             schedule={destination.schedule}
             id={destination.destination_id}
+            setOpenSuccess={setOpenSuccess}
           />
         </TabPanel>
         <TabPanel value="2">
+          <BackfillPage setOpenSuccess={setOpenSuccess} setTab={setTab} />
+        </TabPanel>
+        <TabPanel value="3">
           <ListTable data={dataForTable} />
           <Stack direction="row" spacing={3} marginTop="20px">
             <Button
@@ -243,11 +277,146 @@ const DestinationDetails = () => {
   );
 };
 
-const TransferTable = ({ schedule, id }) => {
+const BackfillPage = ({ setOpenSuccess, setTab }) => {
+  const params = useParams();
+  const { id } = params;
+  const { trigger: triggerRunDestination } = useSWRMutation(
+    `/destinations/${id}/run`,
+    runDestinationRequest
+  );
+  const runDestination = async (destinationId, values) => {
+    // Convert dayjs objects to ISO strings to avoid Server Function serialization issues
+    const scheduleOverride = {
+      backfillType: values.backfillType,
+      startTime: values.startTime ? values.startTime.toISOString() : null,
+      endTime: values.endTime ? values.endTime.toISOString() : null,
+    };
+
+    triggerRunDestination({
+      destinationId,
+      scheduleOverride,
+    });
+    setOpenSuccess(true);
+    setTab("1");
+    // mutateTransfers();
+  };
+  return (
+    <>
+      <Formik
+        initialValues={{
+          backfillType: "",
+          startTime: dayjs().subtract(1, "day"),
+          endTime: dayjs(),
+        }}
+        validationSchema={Yup.object().shape({
+          backfillType: Yup.string()
+            .oneOf(["FULL_REFRESH", "INCREMENTAL"])
+            .required("Backfill type is required"),
+          startTime: Yup.date().when("backfillType", {
+            is: "INCREMENTAL",
+            then: (schema) =>
+              schema.required(
+                "Start time is required for incremental backfill"
+              ),
+            otherwise: (schema) => schema.nullable(),
+          }),
+          endTime: Yup.date()
+            .when("backfillType", {
+              is: "INCREMENTAL",
+              then: (schema) =>
+                schema.required(
+                  "End time is required for incremental backfill"
+                ),
+              otherwise: (schema) => schema.nullable(),
+            })
+            .test(
+              "end-after-start",
+              "End time must be after start time",
+              function (value) {
+                const { startTime } = this.parent;
+                if (startTime && value) {
+                  return dayjs(value).isAfter(dayjs(startTime));
+                }
+                return true;
+              }
+            ),
+        })}
+        onSubmit={(values) => {
+          runDestination(id, values);
+        }}
+      >
+        {({ values, errors, touched, setFieldValue }) => (
+          <Form>
+            <Stack direction="row" spacing={3}>
+              <FormRadioGroup
+                name="backfillType"
+                titleText="Backfill Type"
+                options={[
+                  { value: "FULL_REFRESH", label: "Full Refresh" },
+                  { value: "INCREMENTAL", label: "Incremental" },
+                ]}
+              />
+            </Stack>
+
+            {values.backfillType === "INCREMENTAL" && (
+              <Stack spacing={3} sx={{ mt: 3 }}>
+                <Typography sx={{ fontWeight: 600, marginBottom: "4px" }}>
+                  Incremental Load Settings
+                </Typography>
+                <Stack direction="row" spacing={3}>
+                  <LocalizationProvider dateAdapter={AdapterDayjs}>
+                    <DateTimePicker
+                      label="Start Time"
+                      value={values.startTime}
+                      onChange={(newValue) =>
+                        setFieldValue("startTime", newValue)
+                      }
+                      slotProps={{
+                        textField: {
+                          error: touched.startTime && Boolean(errors.startTime),
+                          helperText: touched.startTime && errors.startTime,
+                          fullWidth: true,
+                        },
+                      }}
+                    />
+                    <DateTimePicker
+                      label="End Time"
+                      value={values.endTime}
+                      onChange={(newValue) =>
+                        setFieldValue("endTime", newValue)
+                      }
+                      slotProps={{
+                        textField: {
+                          error: touched.endTime && Boolean(errors.endTime),
+                          helperText: touched.endTime && errors.endTime,
+                          fullWidth: true,
+                        },
+                      }}
+                    />
+                  </LocalizationProvider>
+                </Stack>
+              </Stack>
+            )}
+
+            <Button
+              type="submit"
+              variant="contained"
+              color="primary"
+              sx={{ mt: 2 }}
+              disabled={!values.backfillType}
+            >
+              Run Backfill
+            </Button>
+          </Form>
+        )}
+      </Formik>
+    </>
+  );
+};
+
+const TransferTable = ({ schedule, id, setOpenSuccess }) => {
   const theme = useTheme();
   const router = useRouter();
-
-  const [openSuccess, setOpenSuccess] = useState(false);
 
   const {
     data: transfers,
@@ -273,11 +442,13 @@ const TransferTable = ({ schedule, id }) => {
     triggerRerunTransfer(transferRunId);
     setOpenSuccess(true);
     mutateTransfers();
-    // autoRefresh();
   };
 
   const runDestination = async (destinationId) => {
-    triggerRunDestination(destinationId);
+    triggerRunDestination({
+      destinationId,
+      scheduleOverride: null,
+    });
     setOpenSuccess(true);
     mutateTransfers();
     // autoRefresh();
@@ -357,21 +528,6 @@ const TransferTable = ({ schedule, id }) => {
 
   return (
     <Stack>
-      <Snackbar
-        open={openSuccess}
-        onClose={() => setOpenSuccess(false)}
-        anchorOrigin={{ vertical: "top", horizontal: "center" }}
-        autoHideDuration={6000}
-        severity="success"
-      >
-        <Alert
-          onClose={() => setOpenSuccess(false)}
-          severity="success"
-          variant="filled"
-        >
-          Transfer started
-        </Alert>
-      </Snackbar>
       <Table
         aria-label="transfers"
         sx={{
@@ -534,7 +690,12 @@ const TransferTable = ({ schedule, id }) => {
 
                   <TableCell>
                     <Typography noWrap variant="subtitle2" fontWeight={600}>
-                      {transfer?.meta?.arguments?.mode
+                      {transfer?.meta?.arguments?.mode?.type === "FULL_REFRESH"
+                        ? `Full Refresh at ${dayjs(transfer.created_at)
+                            .format("MMM D, h:mm A z")
+                            .toString()}`
+                        : ""}
+                      {transfer?.meta?.arguments?.mode?.type === "INCREMENTAL"
                         ? `${dayjs(transfer.meta.arguments.mode.start)
                             .format("MMM D, h:mm A z")
                             .toString()} - ${dayjs(
