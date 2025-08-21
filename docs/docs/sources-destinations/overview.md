@@ -17,4 +17,5 @@ Pontoon can write data to the following destinations:
 
 - **Data Warehouses**: [Snowflake](destinations/snowflake.md), [Amazon Redshift](destinations/redshift.md), [Google BigQuery](destinations/bigquery.md)
 - **SQL Databases**: [Postgres](destinations/postgresql.md)
-- _Coming Soon - Object Storage_: Amazon S3, Google Cloud Storage
+- **Object Storage**: [Amazon S3](https://aws.amazon.com/s3/), [Google Cloud Storage](https://cloud.google.com/storage), [Azure Blob Storage](https://azure.microsoft.com/en-us/products/storage/blobs)
+- _Coming Soon - Data Lake Table Formats: Iceberg, Delta Lake and Hudi_ 

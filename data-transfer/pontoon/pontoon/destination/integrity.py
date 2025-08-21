@@ -53,6 +53,17 @@ class GCSIntegrity(Integrity):
         return True
 
 
+class ABSIntegrity(Integrity):
+    """ Integrity checker for Azure Blob destinations """
+
+    def __init__(self, client):
+        self._client = client
+        raise NotImplementedError("ABSIntegrity checker is not implemented yet")
+
+    def check_batch_volume(self, ds:Dataset):
+        return True
+
+
 class SMSIntegrity(Integrity):
     """ Integrity checker for SMS (Snowflake) based destinations """
 

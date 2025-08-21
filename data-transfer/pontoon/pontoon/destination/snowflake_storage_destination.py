@@ -3,7 +3,7 @@ from typing import List, Dict, Any
 from datetime import datetime
 import snowflake.connector
 from pontoon.base import Namespace, Destination, Stream, Dataset, Record, Progress
-from pontoon.base import DestinationConnectionFailed
+from pontoon.base import DestinationError, DestinationConnectionFailed
 from pontoon.source.sql_source import SQLUtil
 from pontoon.destination import ObjectStoreBase
 from pontoon.destination.integrity import SMSIntegrity
@@ -25,6 +25,9 @@ class SnowflakeStorageDestination(ObjectStoreBase):
         self._create_stage = connect.get('create_stage', False)
         self._parquet_config = connect.get('parquet', {})
 
+        if self._format != 'staging':
+            raise DestinationError(f'Format {self._format} is not supported by Snowflake Storage')
+
     
     def _get_snowflake_client(self):
         c = self._config.get('connect')
@@ -40,7 +43,11 @@ class SnowflakeStorageDestination(ObjectStoreBase):
         except Exception as e:
             raise DestinationConnectionFailed("Failed to connect to Snowflake") from e
 
-    
+
+    def _write_stream(self, stream:Stream):
+        pass
+
+
     def _write_batch(self, stream:Stream, batch:List[Record], batch_index:int):
         # Write a batch of records to snowflake storage formatted as Parquet
         
