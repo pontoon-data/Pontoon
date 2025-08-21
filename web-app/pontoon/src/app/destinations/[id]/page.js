@@ -20,7 +20,7 @@ import {
 } from "@mui/material";
 import Snackbar from "@mui/material/Snackbar";
 import { IconDotsVertical } from "@tabler/icons-react";
-import useSWR from "swr";
+import useSWR, { mutate } from "swr";
 import DashboardCard from "@/app//components/shared/DashboardCard";
 import { ChevronLeft } from "@mui/icons-material";
 import DeleteIcon from "@mui/icons-material/Delete";
@@ -284,7 +284,7 @@ const BackfillPage = ({ setOpenSuccess, setTab }) => {
     `/destinations/${id}/run`,
     runDestinationRequest
   );
-  const runDestination = async (destinationId, values) => {
+  const runDestination = async (values) => {
     // Convert dayjs objects to ISO strings to avoid Server Function serialization issues
     const scheduleOverride = {
       backfillType: values.backfillType,
@@ -293,12 +293,12 @@ const BackfillPage = ({ setOpenSuccess, setTab }) => {
     };
 
     triggerRunDestination({
-      destinationId,
       scheduleOverride,
     });
     setOpenSuccess(true);
+    // Invalidate the transfers endpoint to get the latest transfers
+    mutate(`/transfers?destination_id=${id}`);
     setTab("1");
-    // mutateTransfers();
   };
   return (
     <>
@@ -342,7 +342,7 @@ const BackfillPage = ({ setOpenSuccess, setTab }) => {
             ),
         })}
         onSubmit={(values) => {
-          runDestination(id, values);
+          runDestination(values);
         }}
       >
         {({ values, errors, touched, setFieldValue }) => (
@@ -433,25 +433,10 @@ const TransferTable = ({ schedule, id, setOpenSuccess }) => {
     rerunTransferRequest
   );
 
-  const { trigger: triggerRunDestination } = useSWRMutation(
-    `/destinations/:id/run`,
-    runDestinationRequest
-  );
-
   const rerunTransfer = async (transferRunId) => {
     triggerRerunTransfer(transferRunId);
     setOpenSuccess(true);
     mutateTransfers();
-  };
-
-  const runDestination = async (destinationId) => {
-    triggerRunDestination({
-      destinationId,
-      scheduleOverride: null,
-    });
-    setOpenSuccess(true);
-    mutateTransfers();
-    // autoRefresh();
   };
 
   const flattenTransferRuns = (transfers) => {
@@ -487,30 +472,6 @@ const TransferTable = ({ schedule, id, setOpenSuccess }) => {
       );
 
       flatTransfers.push(mostRecentTransfer);
-
-      // const retryMaxAttempts = transfers[0].meta.retry_max_attempts;
-      // const statuses = transfers.map((t) => t.status);
-
-      // // Prioritize running transfers
-      // const runningTransfer = transfers.find((t) => t.status === "RUNNING");
-      // if (runningTransfer) {
-      //   flatTransfers.push(runningTransfer);
-      //   continue;
-      // }
-
-      // const successTransfer = transfers.find((t) => t.status === "SUCCESS");
-      // const latestTransfer = transfers[transfers.length - 1];
-
-      // if (transfers.length === retryMaxAttempts) {
-      //   // All attempts used – show success if available, otherwise show latest failure
-      //   flatTransfers.push(successTransfer || latestTransfer);
-      // } else if (!successTransfer) {
-      //   // Still retrying – mark latest attempt as retrying
-      //   flatTransfers.push({ ...latestTransfer, status: "RETRYING" });
-      // } else {
-      //   // Successfully completed
-      //   flatTransfers.push(successTransfer);
-      // }
     }
 
     return flatTransfers;
@@ -722,20 +683,6 @@ const TransferTable = ({ schedule, id, setOpenSuccess }) => {
                         Re-run
                       </Button>
                     )}
-
-                    {/* {transfer.status == "SCHEDULED" && (
-                      <Button
-                        variant="outlined"
-                        size="small"
-                        disabled={false}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          runDestination(id);
-                        }}
-                      >
-                        Run Now
-                      </Button>
-                    )} */}
                   </TableCell>
                 </TableRow>
               ))}

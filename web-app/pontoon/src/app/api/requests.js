@@ -9,7 +9,6 @@ export async function getRequest(url) {
       const error = new Error(
         "An error occurred while fetching the data: " + url
       );
-      console.log(res);
       // Attach extra info to the error object.
       error.info = await res.json();
       error.status = res.status;
@@ -130,7 +129,7 @@ export async function rerunTransferRequest(key, { arg }) {
 }
 
 export async function runDestinationRequest(key, { arg }) {
-  const { destinationId, scheduleOverride } = arg;
+  const { scheduleOverride } = arg;
 
   // Prepare the request body based on the schedule override
   let requestBody = {};
@@ -148,7 +147,7 @@ export async function runDestinationRequest(key, { arg }) {
     }
   }
 
-  return postRequest(`/destinations/${destinationId}/run`, {
+  return postRequest(key, {
     arg: requestBody,
   });
 }
