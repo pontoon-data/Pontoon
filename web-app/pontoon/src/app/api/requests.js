@@ -129,5 +129,25 @@ export async function rerunTransferRequest(key, { arg }) {
 }
 
 export async function runDestinationRequest(key, { arg }) {
-  return postRequest(`/destinations/${arg}/run`, { arg: {} });
+  const { scheduleOverride } = arg;
+
+  // Prepare the request body based on the schedule override
+  let requestBody = {};
+  if (scheduleOverride && scheduleOverride.backfillType) {
+    requestBody.type = scheduleOverride.backfillType;
+
+    if (
+      scheduleOverride.backfillType === "INCREMENTAL" &&
+      scheduleOverride.startTime &&
+      scheduleOverride.endTime
+    ) {
+      // startTime and endTime are already ISO strings from the frontend
+      requestBody.start = scheduleOverride.startTime;
+      requestBody.end = scheduleOverride.endTime;
+    }
+  }
+
+  return postRequest(key, {
+    arg: requestBody,
+  });
 }

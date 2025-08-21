@@ -15,7 +15,9 @@ def transfer_task(self, args_json: str):
     print("Running transfer job as celery task...")
     try:
         args = json.loads(args_json).get('commandArgs', [])
-        args += ['--execution-id', str(self.request.id)]
+        if '--execution-id' not in args:
+            # Generate a new execution ID if one is not provided
+            args += ['--execution-id', str(self.request.id)]
         args += ['--retry-count', str(self.request.retries)]
         args += ['--retry-limit', str(TASK_MAX_RETRIES)]
 

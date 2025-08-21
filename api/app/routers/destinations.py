@@ -1,8 +1,9 @@
 import uuid
 import time
-from typing import Annotated, List
+from typing import Annotated, List, Optional, Literal
 from datetime import datetime, timezone
 from fastapi import HTTPException, Depends, Query, APIRouter, Security, status
+from pydantic import BaseModel
 
 from app.models import Auth, Task, Destination, ScheduleModel, TransferRun, Transfer as TransferModel
 from app.routers.common import create_transfer_task, transfer_task_status
@@ -28,6 +29,11 @@ Transfer.configure(
 def get_destination_by_id(session, destination_id:uuid.UUID):
     return Destination.get(session, destination_id)
 
+
+class TransferScheduleOverride(BaseModel):
+    type: Literal["FULL_REFRESH", "INCREMENTAL"]
+    start: Optional[datetime] = None
+    end: Optional[datetime] = None
 
 #
 # Transfer() management helpers
@@ -229,7 +235,12 @@ def create_destination_check(destination_id:uuid.UUID, session=Depends(get_sessi
 
 
 @router.post("/{destination_id}/run")
-def run_destination_transfer(destination_id:uuid.UUID, session=Depends(get_session), auth:Auth = Security(get_auth)):
+def run_destination_transfer(
+    destination_id: uuid.UUID, 
+    schedule_override: Optional[TransferScheduleOverride] = None,
+    session=Depends(get_session), 
+    auth:Auth = Security(get_auth)
+):
     try:
         if settings.skip_transfers:
             return {"ok": True}
@@ -248,17 +259,32 @@ def run_destination_transfer(destination_id:uuid.UUID, session=Depends(get_sessi
         run.set_organization(auth.org_uuid())
         run.set_destination(str(destination_id)) 
         
-        if schedule_model.type != 'FULL_REFRESH':
-            run.set_mode(Mode({
-                'type': schedule_model.type, 
-                'period': schedule_model.frequency, 
-                'start': now - Mode.delta(schedule_model.frequency), 
-                'end': now
-            }))
+        # Determine the mode based on request body or fall back to schedule defaults
+        if schedule_override:
+            if schedule_override.type == 'FULL_REFRESH':
+                run.set_mode(Mode({'type': 'FULL_REFRESH'}))
+            else:
+                end_time = schedule_override.end if schedule_override.end else now
+                start_time = schedule_override.start if schedule_override.start else (end_time - Mode.delta(schedule_model.frequency))
+                run.set_mode(Mode({
+                    'type': 'INCREMENTAL',
+                    'period': schedule_model.frequency,
+                    'start': start_time,
+                    'end': end_time
+                }))
+        else:
+            # Use schedule defaults
+            if schedule_model.type != 'FULL_REFRESH':
+                run.set_mode(Mode({
+                    'type': schedule_model.type, 
+                    'period': schedule_model.frequency, 
+                    'start': now - Mode.delta(schedule_model.frequency), 
+                    'end': now
+                }))
         
         run.run(expedited=False)
     
-    except (TransferException):
+    except TransferException as e:
         raise HTTPException(status_code=400, detail=str(e))
 
 

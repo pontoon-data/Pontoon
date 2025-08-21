@@ -191,11 +191,12 @@ def generate_and_insert_mock_data():
     conn = get_db_connection()
     try:
         logger.info("Starting mock data generation...")
+        num_records_to_generate = 50
         
         # Generate mock data
-        leads = generate_mock_leads(100)
-        campaigns = generate_mock_campaigns(100)
-        attributions = generate_mock_attribution(100)
+        leads = generate_mock_leads(num_records_to_generate)
+        campaigns = generate_mock_campaigns(num_records_to_generate)
+        attributions = generate_mock_attribution(num_records_to_generate)
         
         # Insert data
         insert_leads(conn, leads)
@@ -217,8 +218,8 @@ def main():
     while True:
         try:
             generate_and_insert_mock_data()
-            logger.info("Waiting 5 minutes before next generation...")
-            time.sleep(300)  # 5 minutes
+            logger.info("Waiting 1 minute before next generation...")
+            time.sleep(60)  # 1 minute
         except KeyboardInterrupt:
             logger.info("Mock data generator stopped by user")
             break
