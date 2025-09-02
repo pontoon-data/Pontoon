@@ -20,6 +20,7 @@ dependencies = [
     "pyathena==3.12.2",
     "google-cloud-storage==2.19.0",
     "google-cloud-bigquery-storage==2.27.0",
+    "azure-storage-blob==12.26.0",
     "celery==5.5.3",
     "celery-redbeat==2.3.2",
 ]

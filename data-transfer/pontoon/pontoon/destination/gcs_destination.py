@@ -4,6 +4,7 @@ import tempfile
 from typing import List, Dict, Any
 from google.cloud import storage
 from pontoon.base import Namespace, Destination, Stream, Dataset, Record, Progress
+from pontoon.base import DestinationError
 from pontoon.destination import ObjectStoreBase
 from pontoon.destination.integrity import GCSIntegrity
 
@@ -42,7 +43,14 @@ class GCSDestination(ObjectStoreBase):
             temp_file.write(connect.get('service_account'))
             self._service_account_file = temp_file.name
 
+        if self._format not in ['staging', 'hive']:
+            raise DestinationError(f'Format {self._format} is not supported by GCS')
     
+    
+    def _write_stream(self, stream:Stream):
+        pass
+
+
     def _write_batch(self, stream:Stream, batch:List[Record], batch_index:int):
         # Write a batch of records to GCS formatted as Parquet
         
@@ -57,14 +65,24 @@ class GCSDestination(ObjectStoreBase):
         )
         
         # upload to GCS
-        parquet_gcs_path = ObjectStoreBase.get_object_filename(
-            self._gcs_config, 
-            self._ds.namespace, 
-            stream, 
-            self._dt, 
-            self._batch_id,
-            batch_index
-        )
+        if self._format == 'staging':
+            parquet_gcs_path = ObjectStoreBase.get_object_filename(
+                self._gcs_config, 
+                self._ds.namespace, 
+                stream, 
+                self._dt, 
+                self._batch_id,
+                batch_index
+            )
+        elif self._format == 'hive':
+            parquet_gcs_path = ObjectStoreBase.get_hive_filename(
+                self._gcs_config, 
+                self._ds.namespace, 
+                stream, 
+                self._dt, 
+                self._batch_id,
+                batch_index
+            )
 
 
         blob = bucket.blob(parquet_gcs_path)
