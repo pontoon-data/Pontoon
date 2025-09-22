@@ -2,7 +2,7 @@
 
 To get Pontoon up and running in minutes, we packaged Pontoon into a single Docker container.
 
-> 💡 **Note:** For production workloads, we recommend deploying with [Docker Compose](docker-compose.md) or [AWS Fargate](aws-fargate.md).
+> 💡 **Note:** For production workloads, we recommend using external Postgres and Redis databases.
 
 ## Step 1: Requirements
 
