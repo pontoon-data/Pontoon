@@ -13,7 +13,7 @@ RUN apt-get update \
 COPY pyproject.toml ./pyproject.toml
 
 # Install the pontoon package and its dependencies
-RUN pip install --no-cache-dir .
+RUN pip install --only-binary=:all: --no-cache-dir .
 
 # Copy the pontoon source code
 COPY pontoon/ ./pontoon/
