@@ -2,6 +2,7 @@ import os
 import json
 import uuid
 import sys
+import shutil
 import signal
 import argparse
 import traceback
@@ -14,7 +15,7 @@ from pathlib import Path
 from pontoon import get_source, get_destination, \
                     get_source_by_vendor, get_destination_by_vendor, \
                     logger, configure_logging, \
-                    Progress, Mode, SqliteCache, MemoryCache
+                    Progress, Mode, ArrowIpcCache
 
 
 
@@ -202,7 +203,7 @@ class TransferCommand(Command):
     def _unlink_all(self, paths):
         for path in paths:
             if os.path.exists(path):
-                os.remove(path)
+                shutil.rmtree(path)
 
     
     def _schedule_to_replication_mode(self, schedule):
@@ -367,7 +368,7 @@ class TransferCommand(Command):
         try:
             for source_id, source in self._sources.items():
             
-                cache_db = f"cache-{uuid.uuid4().hex}.db"
+                cache_dir = f"./cache-{uuid.uuid4().hex}"
 
                 models = [model for model in self._models if model['source_id'] == source_id]
                 
@@ -388,14 +389,13 @@ class TransferCommand(Command):
                         'streams': streams,
                         'connect': source['connection_info']
                     },
-                    cache_implementation=SqliteCache,
+                    cache_implementation=ArrowIpcCache,
                     cache_config = {
-                        'chunk_size': 1024,
-                        'db': cache_db
+                        'cache_dir': cache_dir
                     }
                 )
                 sources.append(connector)
-                source_caches.append(cache_db)
+                source_caches.append(cache_dir)
 
         except Exception as e:
             return self._failure(f"Configuring job source connector(s) failed: {e}")

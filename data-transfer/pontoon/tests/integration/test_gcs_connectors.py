@@ -9,7 +9,7 @@ from sqlalchemy import create_engine, inspect, MetaData, Table, text
 
 from pontoon import configure_logging
 from pontoon import get_source, get_destination, get_source_by_vendor, get_destination_by_vendor
-from pontoon import SqliteCache
+from pontoon import ArrowIpcCache
 from pontoon import Progress, Mode
 from pontoon import SourceConnectionFailed, SourceStreamDoesNotExist, SourceStreamInvalidSchema
 from pontoon import DestinationConnectionFailed, DestinationStreamInvalidSchema
