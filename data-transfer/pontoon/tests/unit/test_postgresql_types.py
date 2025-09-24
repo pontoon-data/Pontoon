@@ -1,13 +1,16 @@
 import pytest
+import uuid
+import os
 from datetime import datetime, timedelta, timezone, date
 import pyarrow as pa
-from pontoon import Stream, Mode, Namespace
-from pontoon.source.sql_source import SQLSource, SQLUtil
+from pontoon import Stream, Mode, Namespace, Dataset
+from pontoon.source.sql_source import SQLUtil
+from pontoon.cache.arrow_ipc_cache import ArrowIpcCache
 from sqlalchemy import create_engine, MetaData, Table, Column, Integer, String, DateTime, Boolean, Float, Text, Date, Numeric, inspect, text
 from sqlalchemy.dialects.postgresql import UUID, JSONB, TIMESTAMP
 
 
-class TestPostgresSource:
+class TestPostgresTypes:
     """ 
     Tests specific to PostgreSQL schema handling and type conversion
     """
@@ -211,19 +214,11 @@ class TestPostgresSource:
             cursor_field='created_at'
         )
         
-        # Test that the SQLite cache can handle date objects correctly
-        from pontoon.cache.sqlite_cache import SqliteCache
-        import tempfile
-        import os
-        
-        # Create a temporary SQLite cache
-        temp_db = tempfile.NamedTemporaryFile(delete=False, suffix='.db')
-        temp_db.close()
         
         try:
-            cache = SqliteCache(
+            cache = ArrowIpcCache(
                 namespace=Namespace("test"),
-                config={'db': temp_db.name, 'chunk_size': 1000}
+                config={'cache_dir': f"./cache-{uuid.uuid4()}"}
             )
             
             # Create sample data with date objects
@@ -245,8 +240,7 @@ class TestPostgresSource:
             
         finally:
             # Clean up
-            if os.path.exists(temp_db.name):
-                os.unlink(temp_db.name)
+            pass
 
     def test_postgres_boolean_type_conversion_error(self):
         """
@@ -283,19 +277,12 @@ class TestPostgresSource:
             cursor_field='created_at'
         )
         
-        # Test that the SQLite cache can handle boolean objects correctly
-        from pontoon.cache.sqlite_cache import SqliteCache
-        import tempfile
-        import os
         
-        # Create a temporary SQLite cache
-        temp_db = tempfile.NamedTemporaryFile(delete=False, suffix='.db')
-        temp_db.close()
         
         try:
-            cache = SqliteCache(
+            cache = ArrowIpcCache(
                 namespace=Namespace("test"),
-                config={'db': temp_db.name, 'chunk_size': 1000}
+                config={'cache_dir': f"./cache-{uuid.uuid4()}"}
             )
             
             # Create sample data with boolean objects
@@ -344,8 +331,7 @@ class TestPostgresSource:
         finally:
             # Clean up
             cache.close()
-            if os.path.exists(temp_db.name):
-                os.unlink(temp_db.name)
+            
 
     def test_sqlite_boolean_handling_fixed(self):
         """
@@ -382,19 +368,12 @@ class TestPostgresSource:
             cursor_field='created_at'
         )
         
-        # Test that the SQLite cache can handle boolean objects correctly
-        from pontoon.cache.sqlite_cache import SqliteCache
-        import tempfile
-        import os
         
-        # Create a temporary SQLite cache
-        temp_db = tempfile.NamedTemporaryFile(delete=False, suffix='.db')
-        temp_db.close()
         
         try:
-            cache = SqliteCache(
+            cache = ArrowIpcCache(
                 namespace=Namespace("test"),
-                config={'db': temp_db.name, 'chunk_size': 1000}
+                config={'cache_dir': f"./cache-{uuid.uuid4()}"}
             )
             
             # Create sample data with boolean objects
@@ -422,8 +401,7 @@ class TestPostgresSource:
         finally:
             # Clean up
             cache.close()
-            if os.path.exists(temp_db.name):
-                os.unlink(temp_db.name)
+          
 
     def test_schema_compatibility_fix(self):
         """
@@ -539,21 +517,13 @@ class TestPostgresSource:
             cursor_field='created_at'
         )
         
-        # Test that the destination handles empty streams correctly
-        from pontoon.cache.sqlite_cache import SqliteCache
-        from pontoon.base import Dataset, Mode
-        import tempfile
-        import os
         
-        # Create a temporary SQLite cache
-        temp_db = tempfile.NamedTemporaryFile(delete=False, suffix='.db')
-        temp_db.close()
         
         cache = None
         try:
-            cache = SqliteCache(
+            cache = ArrowIpcCache(
                 namespace=Namespace("test"),
-                config={'db': temp_db.name, 'chunk_size': 1000}
+                config={'cache_dir': f"./cache-{uuid.uuid4()}"}
             )
             
             # Create a dataset with an empty stream (no records written)
@@ -582,12 +552,7 @@ class TestPostgresSource:
             # Clean up
             if cache:
                 cache.close()
-            # Don't try to delete the file if it's still in use
-            try:
-                if os.path.exists(temp_db.name):
-                    os.unlink(temp_db.name)
-            except PermissionError:
-                pass  # File is still in use, that's okay
+            
 
     def test_investigate_missing_records_scenarios(self):
         """

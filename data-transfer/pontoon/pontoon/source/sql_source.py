@@ -1,9 +1,11 @@
 import json
 import re
+from abc import ABC, abstractmethod
 from typing import List, Dict, Tuple, Generator, Any
 from datetime import datetime, timezone, date
 from decimal import Decimal
 from sqlalchemy import create_engine, inspect, MetaData, Table, text, select, func
+from sqlalchemy.engine import Engine
 from sqlalchemy.exc import SQLAlchemyError, OperationalError, InterfaceError, DatabaseError, NoSuchTableError
 
 from pontoon import logger
@@ -96,9 +98,8 @@ class SQLUtil:
         return select_query
 
 
-class SQLSource(Source):
-    """ A Source implementation that can read from any database supported by SQLAlchemy """
-
+class SQLSource(Source, ABC):
+    """ Abstract base class for SQL source implementations """
 
     def __init__(self, config, cache_implementation, cache_config={}):
         self._config = config
@@ -106,12 +107,8 @@ class SQLSource(Source):
 
         connect = config.get('connect')
 
-        if connect.get('database'):
-            self._namespace = Namespace(connect.get('database'))
-        elif connect.get('project_id'):
-            self._namespace = Namespace(connect.get('project_id'))
-        else:
-            self._namespace = Namespace('unknown')
+        # Extract namespace using database-specific logic
+        self._namespace = self._get_namespace(connect)
 
         # our sync mode config
         self._mode = config.get('mode')
@@ -129,48 +126,40 @@ class SQLSource(Source):
         # additional fields to augment streams with
         self._with = config.get('with', {})
  
-        # configure the SQLAlchemy engine
+        # Validate authentication type for this database
         auth_type = connect.get('auth_type')
+        self._validate_auth_type(auth_type)
 
-        if connect.get('dsn'):
-            self._engine = create_engine(connect.get('dsn'))
-        else:
-            vendor_type = connect['vendor_type']
-            if vendor_type in ['redshift', 'postgresql']:
-                if auth_type != 'basic':
-                    raise Exception(f'SQLSource (source-sql) does not support auth_type {auth_type} for {vendor_type}')
-                self._engine = create_engine(
-                    f"postgresql+psycopg2://{connect['user']}:{connect['password']}@"\
-                    f"{connect['host']}:{connect['port']}/{connect['database']}"
-                )
-            elif vendor_type == 'bigquery':
-                if auth_type != 'service_account':
-                    raise Exception(f'SQLSource (source-sql) does not support auth_type {auth_type} for {vendor_type}')
-                self._engine = create_engine(
-                    f"bigquery://{connect['project_id']}", 
-                    credentials_info=json.loads(connect['service_account']), 
-                    arraysize=self._chunk_size
-                )
-            elif vendor_type == 'snowflake':
-                if auth_type != 'access_token':
-                    raise Exception(f'SQLSource (source-sql) does not support auth_type {auth_type} for {vendor_type}')
-                self._engine = create_engine(
-                    f"snowflake://{connect['user']}:{connect['access_token']}@"\
-                    f"{connect['account']}/{connect['database']}?warehouse={connect['warehouse']}"
-                )
-            else:
-                raise Exception(f'SQLSource (source-sql) does not support vendor_type: {vendor_type}')
+        # Create database-specific engine
+        self._engine = self._create_engine(connect)
 
-    
+    @abstractmethod
+    def _create_engine(self, connect_config: dict) -> Engine:
+        """Create database-specific SQLAlchemy engine"""
+        pass
+
+    @abstractmethod
+    def _validate_auth_type(self, auth_type: str) -> None:
+        """Validate authentication type for this database"""
+        pass
+
+    @abstractmethod
+    def _get_namespace(self, connect_config: dict) -> Namespace:
+        """Extract namespace from connection config"""
+        pass
+
+    def _inspect_streams_impl(self) -> List[dict]:
+        """Database-specific stream inspection - default implementation"""
+        return self.inspect_standard_streams()
+
     def _connect(self):
         try:
             return self._engine.connect()
         except (OperationalError, InterfaceError, DatabaseError) as e:
             raise SourceConnectionFailed("Failed to connect to source database") from e
 
-    
     def test_connect(self):
-        # connect test
+        """Test database connection using template method pattern"""
         with self._connect() as conn:
             return True
 
@@ -205,51 +194,14 @@ class SQLSource(Source):
         return streams
 
 
-    def inspect_bigquery_streams(self):
-        
-        streams = []
-
-        with self._connect() as conn:
-            # Use the inspector to get schema and table information
-            inspector = inspect(conn)
-
-            # Get all available schemas
-            schemas = inspector.get_schema_names()
-
-            for schema in schemas:
-            
-                # For each table in the schema
-                for table in inspector.get_table_names(schema=schema):
-                    _, table_name = table.split('.') 
-                        
-                    columns = inspector.get_columns(f"{self._config['connect']['project_id']}.{schema}.{table_name}")
-                    streams.append({
-                        'schema_name': schema, 
-                        'stream_name': table_name, 
-                        'fields': [{'name': col['name'], 'type': str(col['type'])} for col in columns]
-                    })
-
-        return streams
-
-
-
     def inspect_streams(self):
-        # schema info reflection 
-        vendor_type = self._config['connect']['vendor_type']
-
-        if vendor_type in ['postgresql', 'redshift', 'snowflake']:
-            return self.inspect_standard_streams()
-        
-        if vendor_type == 'bigquery':
-            return self.inspect_bigquery_streams()        
-
-        return []
+        """Inspect available streams using database-specific implementation"""
+        return self._inspect_streams_impl()
         
 
 
-    
     def read(self, progress_callback=None) -> Dataset:
-        # Read from source and write to a cached Dataset
+        """Read from source and write to a cached Dataset using template method pattern"""
 
         with self._connect() as conn:
 
@@ -359,4 +311,5 @@ class SQLSource(Source):
 
 
     def close(self):
+        """Close the cache - common cleanup logic"""
         self._cache.close()
