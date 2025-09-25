@@ -1,5 +1,9 @@
 from pontoon.logging_config import configure_logging, logger
 from pontoon.source.sql_source import SQLSource
+from pontoon.source.postgresql_source import PostgreSQLSource
+from pontoon.source.redshift_source import RedshiftSource
+from pontoon.source.bigquery_source import BigQuerySource
+from pontoon.source.snowflake_source import SnowflakeSource
 from pontoon.source.memory_source import MemorySource
 from pontoon.destination.glue_destination import GlueDestination
 from pontoon.destination.stdout_destination import StdoutDestination
@@ -53,6 +57,10 @@ def get_destination_by_vendor(vendor_type:str) -> str:
 
 # register source and destination connectors
 __sources['source-sql'] = SQLSource
+__sources['source-postgresql'] = PostgreSQLSource
+__sources['source-redshift'] = RedshiftSource
+__sources['source-bigquery'] = BigQuerySource
+__sources['source-snowflake'] = SnowflakeSource
 __sources['source-memory'] = MemorySource
 __destinations['destination-sql'] = SQLDestination
 __destinations['destination-glue'] = GlueDestination
@@ -75,10 +83,10 @@ __destinations['destination-snowflake-sms'] = create_multi_destination([Snowflak
 # map from vendor types to source and destination connectors
 __vendor_source_map = {
     'memory': 'source-memory',
-    'redshift': 'source-sql',
-    'snowflake': 'source-sql',
-    'bigquery': 'source-sql',
-    'postgresql': 'source-sql',
+    'redshift': 'source-redshift',
+    'snowflake': 'source-snowflake',
+    'bigquery': 'source-bigquery',
+    'postgresql': 'source-postgresql',
     'mysql': 'source-sql',
     'athena': 'source-sql'
 }
