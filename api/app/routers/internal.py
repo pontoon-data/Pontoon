@@ -1,4 +1,5 @@
 import uuid
+from typing import Optional
 from fastapi import HTTPException, Depends, Query, APIRouter
 
 from app.dependencies import get_session
@@ -36,7 +37,7 @@ def read_destination(destination_id: uuid.UUID, session=Depends(get_session)):
     return get_destination_by_id(session, destination_id)
 
 
-@router.get("/runs/{transfer_id}", response_model=TransferRun.Model)
+@router.get("/runs/{transfer_id}", response_model=Optional[TransferRun.Model])
 def get_transfer_run(transfer_id: uuid.UUID, session=Depends(get_session)):
     return TransferRun.get_latest_transfer_run(session, transfer_id)
 
@@ -62,7 +63,13 @@ def update_transfer_run(transfer_run_id:uuid.UUID, transfer_run:TransferRun.Upda
 
     # Get the destination vendor type
     transfer_id = transfer_run.transfer_id
-    destination_id = Transfer.get(session, transfer_id).destination_id
+    transfer = Transfer.get(session, transfer_id)
+
+    # Ad-hoc transfer runs don't have a parent transfer
+    if transfer is None:
+        return transfer_run
+
+    destination_id = transfer.destination_id
     destination_vendor_type = Destination.get(session, destination_id).connection_info['vendor_type']
 
     # Get the source vendor types from the models transferred

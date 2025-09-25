@@ -66,7 +66,11 @@ class TransferRun:
         if status != None:
             stmt = stmt.where(TransferRun.Model.status == status)
 
-        return session.exec(stmt).first()
+        result = session.exec(stmt).all()
+        if len(result) == 1:
+            return result[0]
+        else:
+            return None
 
 
     @staticmethod

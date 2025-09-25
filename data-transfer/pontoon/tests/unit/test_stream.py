@@ -47,7 +47,6 @@ class TestStream:
 
     def test__with_extra_fields(self):
         now = datetime(2025, 1, 1)
-        now_str = now.isoformat()
 
         stream = Stream('users', 'pontoon', self.schema)
         stream.with_checksum()
@@ -65,11 +64,11 @@ class TestStream:
         data = [0, 'Mike', 35]
         checksum = hashlib.md5('0Mike35'.encode('utf-8')).hexdigest()
         record = stream.to_record(data)
-        assert record.data == [0, 'Mike', 35, checksum, 'batch1', '1.0.0', now_str]
+        assert record.data == [0, 'Mike', 35, checksum, 'batch1', '1.0.0', now]
 
         stream.drop_field('name')
         record = stream.to_record(data)
-        assert record.data == [0, 35, checksum, 'batch1', '1.0.0', now_str]
+        assert record.data == [0, 35, checksum, 'batch1', '1.0.0', now]
 
 
 

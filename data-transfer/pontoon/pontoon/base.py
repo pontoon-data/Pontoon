@@ -136,7 +136,7 @@ class Stream:
         
     
     def with_last_synced_at(self, sync_dt:datetime, field_name:str='pontoon__last_synced_at') -> 'Stream':
-        return self.with_field(field_name, pa.timestamp('us', tz='UTC'), sync_dt.isoformat())
+        return self.with_field(field_name, pa.timestamp('us', tz='UTC'), sync_dt)
     
     
     def with_version(self, version:str, field_name='pontoon__version') -> 'Stream':

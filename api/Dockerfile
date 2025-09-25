@@ -22,7 +22,7 @@ RUN apt-get update \
 
 # Copy and install the transfer library wheel
 COPY --from=transfer-builder /transfer-build/dist/*.whl /api/dist/
-RUN pip install --no-cache-dir /api/dist/pontoon-*.whl
+RUN pip install --only-binary=:all: --no-cache-dir /api/dist/pontoon-*.whl
 
 # Build the API app
 COPY ./api/pyproject.toml /api/pyproject.toml
